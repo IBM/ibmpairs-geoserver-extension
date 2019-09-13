@@ -1,0 +1,46 @@
+# IBM Confidential
+#
+# OCO Source Materials
+#
+# Copyright IBM Corp. 2018
+#
+# The source code for this program is not published or otherwise
+# divested of its trade secrets, irrespective of what has been
+# deposited with the U.S. Copyright Office.
+
+language: java
+
+jdk:
+  - openjdk8
+
+network: bluezone
+
+dist: xenial
+
+before_install:
+- if [ ${TRAVIS_PULL_REQUEST} = "false" ]; then make checkout-deps; fi
+
+script:
+- make build
+
+#Push war to github releases
+deploy:
+
+  #Execute block only on master (and only for manual push)
+- provider: script
+  script: make release-if-not-auto-push
+  skip_cleanup: true
+  on:
+    branch: master
+
+  #Execute block only when a tag is created
+- provider: script
+  script: make push
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: ${TRAVIS_TAG} =~ ^[0-9]+\.[0-9]+\.[0-9]+.*$
+
+env:
+  global:
+    - OCTOKIT_API_ENDPOINT=https://github.ibm.com/api/v3
