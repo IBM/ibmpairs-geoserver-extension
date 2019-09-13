@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="icon" href="data:,">
+  <meta charset="utf-8">
+  <title>Using Parcel with OpenLayers</title>
+  <style>
+    div {
+      margin-bottom: 0.5em
+    }
+
+    #map {
+      width: 80%;
+      height: 50%;
+    }
+
+    #selectdiv {
+      width: 30%;
+    }
+
+    #selectLayer {
+      font-size: large;
+      width: 100%;
+    }
+
+    .green {
+      background-color: aqua;
+      font-size: large;
+    }
+
+    .ol-dragzoom {
+      border-color: blue;
+      border-width: 5px;
+      background-color: rgba(37, 96, 223, 0.301);
+    }
+  </style>
+  <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/latest/build/ol.js"></script>
+  <!-- <script type="text/javascript" src="./mylib.js"></script> -->
+  <script type="text/javascript" src="./pairsclient0_3.js"></script>
+
+  <script>
+    function updateMap1() {
+      var obj = document.getElementById("selectLayer");
+      var stext = obj.options[obj.selectedIndex].text;
+      var infoDiv = document.getElementById("infoDiv");
+      infoDiv.innerHTML = "<p>" + "Selected Layer: " + "</p>";
+      infoDiv.innerText += "\n" + stext;
+      updateMap();
+    }
+  </script>
+</head>
+
+<body>
+<div id="xxx">
+  <div id="map"></div>
+  <div id="selectdiv">
+    <form>
+      <select id="selectLayer" onchange="updateMap1()">
+        <option selected="selected" disabled>Choose layer</option>
+        <option>cropfraction_49180</option>
+        <option>cropland_49073</option>
+        <option>cropscape_111</option>
+        <option>modis_aqua_13_prs</option>
+      </select>
+      <!-- <input type="button" onclick="updateMap1()" value="Update map layers"> -->
+    </form>
+  </div>
+
+  <div id="dataAvailYear">
+    <table id="yearTable" cellpadding="2" cellspacing="2" border="1" onclick="updateMap()"></table>
+  </div>
+  <div id="dataAvailMon"></div>
+    <table id="monthTable" cellpadding="2" cellspacing="2" border="1" onclick="updateMap()"></table>
+  <h3>Status</h3>
+  <div id="infoDiv">
+  </div>
+  <div id="debugDiv"></div>
+</div>
+</body>
+
+</html>

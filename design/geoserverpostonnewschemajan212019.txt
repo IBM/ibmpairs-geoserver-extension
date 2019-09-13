@@ -1,0 +1,11 @@
+Hi, 
+We developed a Geoserver extension to provide real time raster image 
+data from IBM PAIRS (ibmpairs.mybluemix.net) repository. 
+
+As part of the cleaning up of our extension, we would like to introduce a custom Connection schema ( "ibmpairs") specific to our plugin. This schema would appear and be accepted in the 'Connection' field of Geoserver's "create new datastore" dialog as indicated in the attached/embedded image: 
+
+
+
+Presently, we use the http schema as a workaround, Geoserver internally verifies the schema and URL. If I try a custom schema or url which is not visible the Geoserver code internally atempts to verify the Connection and rejects it. Somehow we need to register our new schema with Geoserver and get a callback to intercept this Geoserver code that verifies the new Connection. How do we do this? 
+
+(Our plugin is based on public class PairsFormatFactory implements GridFormatFactorySpi and implements extensions of public class PairsFormat extends AbstractGridFormat implements Format {...} and public class PairsCoverageReader extends AbstractGridCoverage2DReader implements GridCoverage2DReader {...} and is otherwise working.

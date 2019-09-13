@@ -1,0 +1,20 @@
+{
+  "name": "view",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel index.html",
+    "build": "parcel build --public-url . indexnorm.html indexrui111.html indexrui49073.html indexnormmulti.html index.html",
+    "build_orig": "parcel build --public-url . indexnorm.html index.html index01.html index02.html index03.html index04.html"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel-bundler": "^1.10.3"
+  },
+  "dependencies": {
+    "ol-layerswitcher": "^3.2.0"
+  }
+}

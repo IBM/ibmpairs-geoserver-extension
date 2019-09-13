@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html style="height:100%;margin:0;padding:0">
+
+<head>
+  <link rel="icon" href="data:,">
+  <meta charset="utf-8">
+  <title>Using Parcel with OpenLayers</title>
+  <style>
+    div {
+      margin-bottom: 0.5em
+    }
+
+    #map {
+      width: 80%;
+      height: 50%;
+    }
+
+
+
+      #map .ol-zoom {
+position:absolute;
+top:70px;
+left:30px;
+      }
+
+
+
+
+
+      #map .ol-zoomslider {
+position:absolute;
+top:70px;
+left:60px;
+        top: 2.3em;
+      }
+
+      #map .ol-touch .ol-zoom .ol-zoom-out {
+        margin-top: 212px;
+      }
+
+      #map .ol-touch .ol-zoomslider {
+        top: 2.75em;
+      }
+
+      #map .ol-zoom-in.ol-has-tooltip:hover [role=tooltip],
+      #map .ol-zoom-in.ol-has-tooltip:focus [role=tooltip] {
+        top: 3px;
+      }
+
+      #map .ol-zoom-out.ol-has-tooltip:hover [role=tooltip],
+      #map .ol-zoom-out.ol-has-tooltip:focus [role=tooltip] {
+        top: 232px;
+      }
+
+
+    #selectdiv {
+      width: 30%;
+    }
+
+    #selectLayer {
+      font-size: large;
+      width: 100%;
+    }
+
+    .green {
+      background-color: aqua;
+      font-size: large;
+    }
+
+    .ol-dragzoom {
+      border-color: blue;
+      border-width: 5px;
+      background-color: rgba(37, 96, 223, 0.301);
+    }
+  </style>
+  <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/latest/build/ol.js"></script>
+  <!-- <script type="text/javascript" src="./mylib.js"></script> -->
+  <script type="text/javascript" src="./pairsclient0_3.js"></script>
+
+  <script>
+    function updateMap1() {
+      var obj = document.getElementById("selectLayer");
+      var stext = obj.options[obj.selectedIndex].text;
+      var infoDiv = document.getElementById("infoDiv");
+      infoDiv.innerHTML = "<p>" + "Selected Layer: " + "</p>";
+      infoDiv.innerText += "\n" + stext;
+      updateMap();
+    }
+  </script>
+</head>
+
+<body style="height:100%;margin:0;padding:0">
+<div id="xxx" style="position:relative;width:100%;height:100%">
+  <div id="map" style="position:absolute;height:100%;width:100%"></div>
+  <div id="selectdiv" style="position:absolute;top:30px;left:30px">
+    <form>
+      <select id="selectLayer" onchange="updateMap1()">
+        <option selected="selected" disabled>Choose layer</option>
+        <option>cropfraction_49180</option>
+        <option>cropland_49073</option>
+        <option>cropscape_111</option>
+      </select>
+      <!-- <input type="button" onclick="updateMap1()" value="Update map layers"> -->
+    </form>
+  </div>
+<div id="zoom_div" style="position:absolute;top:30px;left:30px"></div>
+
+  <div id="dataAvailYear" style="position:absolute;z-index:100;bottom:50px;width:800px;text-align:center;background:#FFFFFF;opacity:0.75">
+    <table id="yearTable" cellpadding="2" cellspacing="2" border="1" onclick="updateMap()" width="100%"></table>
+  </div>
+  <div id="dataAvailMon"></div>
+
+  <div id="dataAvailMonth" style="position:absolute;z-index:100;bottom:20px;width:800px;text-align:center;background:#FFFFFF;opacity:0.75">
+    <table id="monthTable" cellpadding="2" cellspacing="2" border="1" onclick="updateMap()" width="100%"></table>
+  </div>
+  <h3>Status</h3>
+
+  <div id="infoDiv">
+  </div>
+  <div id="debugDiv"></div>
+</div>
+</body>
+
+</html>

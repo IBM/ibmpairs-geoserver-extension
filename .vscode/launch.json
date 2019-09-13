@@ -1,0 +1,53 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - PairsFormatFactory",
+            "request": "launch",
+            "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsFormatFactory",
+            "projectName": "pairs-hbase-plugin"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - PairsConfig",
+            "request": "launch",
+            "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsConfig",
+            "projectName": "pairs-hbase-plugin"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - PairsUtilities",
+            "request": "launch",
+            "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsUtilities",
+            "projectName": "pairs-hbase-plugin"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopOnEntry": false,
+            "mainClass": "",
+            "args": ""
+        },
+        {
+            "type": "java",
+            "name": "JPDA pairs-alpha (8000)",
+            "request": "attach",
+            "hostName": "pairs-alpha",
+            "port": 8000
+        },
+        {
+            "type": "java",
+            "name": "JPDA Debug local (8000)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 8000
+        }
+    ]
+}

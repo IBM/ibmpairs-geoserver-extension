@@ -1,0 +1,41 @@
+package com.ibm.pa.pairs.geoserver.plugin.hbase;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.stream.ImageInputStreamImpl;
+
+// Read meta-data and maybe image?
+public class PairsImageInputStream extends ImageInputStreamImpl {
+    public static int INT_SCALE = (int) Math.pow(2, 32);
+    public static byte BYTE_SCALE = (byte) Math.pow(2, 8);
+
+    public PairsImageInputStream() {
+        super();
+    }
+
+    @Override
+    public int read() throws IOException {
+        return getInt();
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        int val = getBytes(b, len);
+        return len;
+    }
+
+    public int getBytes(byte[] b, int len) {
+        if( b.length < len)
+        len = b.length;
+        while(len-- > 0) {
+            b[len] = (byte) (Math.random() * BYTE_SCALE);
+        }
+        return len;
+    }
+
+    public int getInt() {
+        int val = (int) (Math.random() * INT_SCALE);
+        return val;
+    }
+}

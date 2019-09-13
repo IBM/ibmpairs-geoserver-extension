@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                               http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.geotools</groupId>
+    <artifactId>plugin</artifactId>
+    <version>20.0</version>
+  </parent>
+
+  <groupId>org.geotools</groupId>
+  <artifactId>pairs-hbase-plugin</artifactId>
+  <version>0.9</version>
+  <packaging>jar</packaging>
+
+  <name>Pairs-hbase-raster</name>
+  <description>
+    Datasource created to directly get data from pairs HBase
+  </description>
+
+  <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.geoserver/gs-wms -->
+    <dependency>
+      <groupId>org.geoserver</groupId>
+      <artifactId>gs-wms</artifactId>
+      <version>2.14.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-main</artifactId>
+      <version>${geotools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-coverage</artifactId>
+      <version>${geotools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-referencing</artifactId>
+      <version>${geotools.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>it.geosolutions.imageio-ext</groupId>
+      <artifactId>imageio-ext-tiff</artifactId>
+      <version>${imageio.ext.version}</version>
+    </dependency>
+    <!-- Test dependencies -->
+    <dependency>
+      <!-- We need this to make the referencing module useful. -->
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-epsg-hsql</artifactId>
+      <version>${geotools.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.geotools</groupId>
+      <artifactId>gt-sample-data</artifactId>
+      <version>${geotools.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
