@@ -1,4 +1,31 @@
 # This README updated from Jan 14, 2019 
+## newer doc sept 18+ 2019
+
+### Configuration of the plugin via screen shots
+The layer with the plugin:
+[link](http://pairs-alpha.res.ibm.com:8082/geoserver/web/wicket/bookmarkable/org.geoserver.web.data.layer.LayerPage?7)
+
+Image of plugin store:
+![datastore1](doc-files/geoserverpairsdatastore.png "datastore")
+
+image of plugin layer:
+![pluginlayer1](doc-files/geoserverpairspluginlayer1.png "layer")
+
+plugin layer data tab settings 1:
+![data tab 1](doc-files/geoserverpairspluginlayerdata1.png "layer data tab 1")
+
+plugin layer data tab settings 1:
+![data tab 2](doc-files/geoserverpairspluginlayerdata2.png "layer data tab 2")
+
+plugin layer publishing tab settings 1:
+![publishing tab 1](doc-files/geoserverpairspluginlayerpublishing1.png "layer publishing tab 2")
+
+plugin layer publishing tab settings 2:
+![publishing tab 2](doc-files/geoserverpairspluginlayerpublishing1.png "layer publishing tab 2")
+
+
+
+
 ## need to start reflecting these issues and feature requests in Github
 codebase uses pairs-data-service on host (pairs-web04) with dynamic image, and exact stitching
 Pairs-hbase geoserver extension uses returned metadata from pairs-data-service
