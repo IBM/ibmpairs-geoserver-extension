@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "CodeLens (Launch) - PairsGeoserverExtensionConfig",
+            "request": "launch",
+            "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsGeoserverExtensionConfig",
+            "projectName": "pairs-hbase-plugin"
+        },
+        {
+            "type": "java",
             "name": "CodeLens (Launch) - PairsFormatFactory",
             "request": "launch",
             "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsFormatFactory",

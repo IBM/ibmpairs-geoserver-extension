@@ -3,7 +3,6 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,7 +88,7 @@ public class PairsGeoserverExtensionConfig {
             path = Paths.get(PairsGeoserverExtensionConfig.class.getClassLoader().getResource(CONFIG_FILE).toURI());
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
         } catch (NullPointerException | IOException | URISyntaxException e) {
-            String msg = "Config file resource not found: " + CONFIG_FILE + ", msg: " + e.getMessage();
+            String msg = "Config json file not found on classpath: " + CONFIG_FILE + ", msg: " + e.getMessage();
             logger.error(msg);
         }
 
@@ -103,7 +102,7 @@ public class PairsGeoserverExtensionConfig {
             path = Paths.get(System.getProperty("user.home"), CONFIG_FOLDER, CONFIG_FILE);
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
         } catch (NullPointerException | IOException e) {
-            String msg = "Config File not found; path: " + path.toString() + ", msg: " + e.getMessage();
+            String msg = "Config File not found in file system; path: " + path.toString() + ", msg: " + e.getMessage();
             logger.error(msg);
         }
 
