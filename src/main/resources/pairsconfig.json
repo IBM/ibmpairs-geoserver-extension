@@ -1,6 +1,0 @@
-{
-  "listOfCreateCoverage2dMethods" : [ "raster", "bufferedImage" ],
-  "listOfCreateBufferedImageMethods" : [ "getGrayImageFromFloatData", "getGrayImageFromIntData", "default" ],
-  "createCoverage2DMethod" : "raster",
-  "createBufferedImageMethod" : "getGrayImageFromFloatData"
-}

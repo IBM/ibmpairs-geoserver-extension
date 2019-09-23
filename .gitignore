@@ -3,6 +3,7 @@
 target/
 
 logs/
+persistence.xml
 
 # Mac OS
 .DS_Store
