@@ -1,3 +1,5 @@
+# Release 0.13.0
+* feba829 - remove old config file, gitignore
 # Release 0.12.0
 * b4ed6be - update test config file
 # Release 0.11.0
