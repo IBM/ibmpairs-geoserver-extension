@@ -31,14 +31,8 @@ public class PairsUtilities {
     public static String DFORMAT = "%.4f";
     public static String IFORMAT = "%d";
     public static String LFORMAT = "%d";
-    public static String PAIRS_DATA_SERVICE_HOST = PairsGeoserverExtensionConfig.DEFAULT_DATA_SERVICE_HOST;
-    public static int PAIRS_DATA_SERVICE_PORT = PairsGeoserverExtensionConfig.DEFAULT_DATA_SERVICE_PORT;
-    public static String PAIRS_DATA_SERVICE_RASTER = PairsGeoserverExtensionConfig.DEFAULT_DATA_SERVICE_RASTER_ACTION;
     public static String PAIRS_DATA_SERVICE_HEADER_KEY = "ibmpairs";
     public static int TEST_LAYERID = 49180;
-    // public static int TEST_DATASETID = 133;
-    public static final String TEST_LAYER_49180_TIMESTAMP_STRING = "1435708800";
-    public static final String TEST_LAYER_49073_TIMESTAMP_STRING = "1420070400";
     public static long TEST_TIMESTAMP = 1435708800L;
     public static BoundingBox bbox = new BoundingBox(-80, 30, -70, 40);
     public static ImageDescriptor TEST_IMAGE_DESCRIPTOR = new ImageDescriptor(bbox, 384, 768);
@@ -98,8 +92,12 @@ public class PairsUtilities {
             ImageDescriptor imageDescriptor) throws URISyntaxException {
         URI result = null;
         URIBuilder builder = new URIBuilder();
-        builder.setScheme("http").setHost(PAIRS_DATA_SERVICE_HOST).setPort(PAIRS_DATA_SERVICE_PORT)
-                .setPath(PAIRS_DATA_SERVICE_RASTER).setParameter("layerid", Integer.toString(layerId))
+        String host=PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceHostname();
+        int port = PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePort();
+        String action = PairsGeoserverExtensionConfig.getInstance().getGetMapRasterAction();
+
+        builder.setScheme("http").setHost(host).setPort(port)
+                .setPath(action).setParameter("layerid", Integer.toString(layerId))
                 .setParameter("timestamp", Long.toString(timestamp)).setParameter("level", Long.toString(level))
                 .setParameter("statistic", statistic)
                 .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
