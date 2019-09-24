@@ -1,7 +1,9 @@
 #!/bin/bash
 
 HOST="pairs-alpha"
+HOST="test-pairs-dev01"
 TOMCAT_FOLDER="tomcat-geoserver2"
+TOMCAT_FOLDER="tomcat-geoserver"
 HELP="$ buildanddeploy HOST TOMCAT_FOLDER"
 DEFAULT_ARGS="example: $ buildanddeploy $HOST $TOMCAT_FOLDER"
 
