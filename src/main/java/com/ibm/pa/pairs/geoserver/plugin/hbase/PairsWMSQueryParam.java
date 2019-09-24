@@ -12,8 +12,6 @@ public class PairsWMSQueryParam {
     int layerid;
     long timestamp;
     String statistic;
-    float nodataValue = PairsGeoserverExtensionConfig.DEFAULT_NO_DATA;
-    private boolean debugNodata = false;
 
     @Override
     public String toString() {
@@ -47,19 +45,18 @@ public class PairsWMSQueryParam {
             if (kvp.containsKey(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID))
                 queryParams.setLayerid(Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
             if (kvp.containsKey(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP))
-                queryParams.setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
+                queryParams
+                        .setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
             if (kvp.containsKey(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC))
                 queryParams.setStatistic(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
-            if (kvp.containsKey(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_NODATA_VALUE)) {
-                queryParams.setNodataValue(Float.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_NODATA_VALUE)));
-            }
         }
 
         return queryParams;
     }
 
     public PairsWMSQueryParam() {
-        this(PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerId(), PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerTimestamp(),
+        this(PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerId(),
+                PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerTimestamp(),
                 PairsGeoserverExtensionConfig.getInstance().getPairsTestStatistic());
     }
 
@@ -91,18 +88,5 @@ public class PairsWMSQueryParam {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public float getNodataValue() {
-        return this.nodataValue;
-    }
-
-    public void setNodataValue(float nodataValue) {
-        this.nodataValue = nodataValue;
-        this.debugNodata = true;
-    }
-
-    public boolean isDebugNodata() {
-        return this.debugNodata;
     }
 }

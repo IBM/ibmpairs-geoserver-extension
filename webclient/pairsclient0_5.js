@@ -35,6 +35,7 @@ var availableLayers = {
   "modis_aqua_13_prs_51": { "layerId": 51, "timestamp": 1558051200, "statistic": "mean", "maxValue": 1 },
   "modis_aqua_13_prs_xy": { "layerId": 54, "timestamp": 1563580800, "statistic": "mean", "maxValue": 1 },
   "landsat8_L1_NIR": { "layerId": 49670, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
+  "sentinel": { "layerId": 49359, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
   "land-cover-mrlc-50120": { "layerId": 50120, "timestamp": 1464782400, "statistic": "mean", "maxValue": 255 },
   "NAIP_Texas_49238": { "layerId": 49238, "timestamp": 1272110400, "statistic": "mean", "maxValue": 255 }
 }

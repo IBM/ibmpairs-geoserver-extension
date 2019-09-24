@@ -29,26 +29,15 @@ public class PairsGeoserverExtensionConfig {
     public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid";
     public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_timestamp"; // epoch in seconds
     public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_statistic";
-    public static String PAIRS_QUERY_KEY_NODATA_VALUE = PAIRS_QUERY_STRING_KEY_PREFIX + "_nodatavalue";
-
-    // Defaults for testing
-    public static String DEFAULT_DATA_SERVICE_HOST = "pairs-web01";
-    public static int DEFAULT_DATA_SERVICE_PORT = 9082;
-    // public static String DEFAULT_DATA_SERVICE_RASTER_ACTION =
-    // "pairsdataservice/api/v2/data/raster";
-    public static String DEFAULT_DATA_SERVICE_RASTER_ACTION = "api/v1/dataquery/raster";
-    public static int TEST_LAYERID_49180 = 49180;
-    // public static int TEST_DATASETID = 133;
-    public static final long TEST_LAYER_49180_TIMESTAMP_LONG = 1435708800L;
-    public static final String PAIRS_TEST_STATISTIC = "mean";
-    public static final float DEFAULT_NO_DATA = -9999.0f;
 
     // Dynamically configurable items
-    String pairsDataServiceHostname = DEFAULT_DATA_SERVICE_HOST;
-    int pairsDataServicePort = DEFAULT_DATA_SERVICE_PORT;
-    int pairsTestLayerId = TEST_LAYERID_49180;
-    long pairsTestLayerTimestamp = TEST_LAYER_49180_TIMESTAMP_LONG;
-    String pairsTestStatistic = PAIRS_TEST_STATISTIC;
+    private String uriScheme = "http";
+    private String pairsDataServiceHostname = "pairs-alpha";
+    private int pairsDataServicePort = 9082;
+    private String getMapRasterAction = "api/v1/dataquery/raster";
+    private int pairsTestLayerId = 49180;
+    private long pairsTestLayerTimestamp = 1435708800L;
+    private String pairsTestStatistic = "mean";
 
     public String[] listOfCreateCoverage2dMethods = { RASTER, BUFFERED_IMAGE };
     public String[] listOfCreateBufferedImageMethods = { "getGrayImageFromFloatData", "getGrayImageFromIntData",
@@ -217,6 +206,22 @@ public class PairsGeoserverExtensionConfig {
 
     public void setPairsTestStatistic(String pairsTestStatistic) {
         this.pairsTestStatistic = pairsTestStatistic;
+    }
+
+    public String getUriScheme() {
+        return uriScheme;
+    }
+
+    public void setUriScheme(String uriScheme) {
+        this.uriScheme = uriScheme;
+    }
+
+    public String getGetMapRasterAction() {
+        return getMapRasterAction;
+    }
+
+    public void setGetMapRasterAction(String getMapRasterAction) {
+        this.getMapRasterAction = getMapRasterAction;
     }
 
 }

@@ -309,10 +309,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
             byte[] rawData = PairsUtilities.readRawContent(response);
             float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
 
-            if (pairsParams.isDebugNodata()) {
-                debugNodata(responseImageDescriptor, imageDataFloat);
-            }
-
             result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
         } catch (Exception e) {
             logger.severe(e.getMessage());
@@ -321,20 +317,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
 
         setPairsWMSHttpResponse();
         return result;
-    }
-
-    private void debugNodata(ImageDescriptor responseImageDescriptor, float[] imageDataFloat) {
-        int index = PairsUtilities.hasNodata(imageDataFloat, PairsGeoserverExtensionConfig.DEFAULT_NO_DATA);
-        if (index > -1) {
-            int col = index % responseImageDescriptor.getWidth();
-            int row = index / responseImageDescriptor.getWidth();
-            double apprLon = responseImageDescriptor.getBoundingBox().getSwLonLat()[0]
-                    + (col / responseImageDescriptor.getWidth()) * responseImageDescriptor.getBoundingBox().getWidth();
-            String msg = String.format(" Response has nodata: tile swlonlat(%.3f, %.3f) ",
-                    responseImageDescriptor.getBoundingBox().getSwLonLat()[0],
-                    responseImageDescriptor.getBoundingBox().getSwLonLat()[1]);
-            logger.info(msg);
-        }
     }
 
     private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
