@@ -95,7 +95,7 @@ public class PairsGeoserverExtensionConfig {
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
-            logger.error("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
+            logger.warn("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
         }
 
         return result;
@@ -108,7 +108,7 @@ public class PairsGeoserverExtensionConfig {
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from file system path: " + path.toString());
         } catch (NullPointerException | IOException e) {
-            logger.error("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: " + e.getMessage());
+            logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: " + e.getMessage());
         }
 
         return result;
