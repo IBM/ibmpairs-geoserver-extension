@@ -50,7 +50,7 @@ public class PairsUtilities {
     }
 
     public static BufferedImage testHbaseServiceCall() throws URISyntaxException, ClientProtocolException, IOException {
-        URI uri = buildPairsDataServiceUri(TEST_LAYERID, TEST_TIMESTAMP, -1, "Mean", TEST_IMAGE_DESCRIPTOR);
+        URI uri = buildPairsDataServiceRasterUri(TEST_LAYERID, TEST_TIMESTAMP, -1, "Mean", TEST_IMAGE_DESCRIPTOR);
         HttpResponse response = getHttpResponse(uri);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
@@ -88,18 +88,23 @@ public class PairsUtilities {
      * @return
      * @throws URISyntaxException
      */
-    public static URI buildPairsDataServiceUri(int layerId, long timestamp, int level, String statistic,
+    public static URI buildPairsDataServiceRasterUri(int layerId, long timestamp, int level, String statistic,
             ImageDescriptor imageDescriptor) throws URISyntaxException {
         URI result = null;
-        URIBuilder builder = new URIBuilder();
-        String host=PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceHostname();
-        int port = PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePort();
-        String action = PairsGeoserverExtensionConfig.getInstance().getGetMapRasterAction();
+        URIBuilder builder = null;
 
-        builder.setScheme("http").setHost(host).setPort(port)
-                .setPath(action).setParameter("layerid", Integer.toString(layerId))
-                .setParameter("timestamp", Long.toString(timestamp)).setParameter("level", Long.toString(level))
-                .setParameter("statistic", statistic)
+        String configUri = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseRasterUrl();
+        if (configUri != null && !configUri.isEmpty())
+            builder = new URIBuilder(configUri);
+        else {
+            builder = new URIBuilder();
+            String host = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceHostname();
+            int port = PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePort();
+            String path = PairsGeoserverExtensionConfig.getInstance().getGetMapRasterAction();
+            builder.setScheme("http").setHost(host).setPort(port).setPath(path);
+        }
+        builder.setParameter("layerid", Integer.toString(layerId)).setParameter("timestamp", Long.toString(timestamp))
+                .setParameter("level", Long.toString(level)).setParameter("statistic", statistic)
                 .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
                 .setParameter("swlon", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[0]))
@@ -176,8 +181,9 @@ public class PairsUtilities {
 
     /**
      * Debugging routine, finds if there is any entry == nodataVal
+     * 
      * @param float[] data
-     * @param float nodataVal
+     * @param float   nodataVal
      * @return index of first nodata entry
      */
     public static int hasNodata(float[] data, float nodataVal) {

@@ -296,7 +296,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            URI uri = PairsUtilities.buildPairsDataServiceUri(pairsParams.getLayerid(), pairsParams.getTimestamp(), -1,
+            URI uri = PairsUtilities.buildPairsDataServiceRasterUri(pairsParams.getLayerid(), pairsParams.getTimestamp(), -1,
                     pairsParams.getStatistic(), requestImageDescriptor);
 
             HttpResponse response = PairsUtilities.getHttpResponse(uri);
