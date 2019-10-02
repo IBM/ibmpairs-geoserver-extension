@@ -17,7 +17,7 @@
   <version>0.14.0</version>
   <packaging>jar</packaging>
 
-  <name>pairs-hbase-raster</name>
+  <name>pairs-hbase-extension</name>
   <description>
     IBM datasource plugin created to directly get data from pairs HBase
   </description>

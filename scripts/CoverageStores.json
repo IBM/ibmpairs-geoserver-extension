@@ -1,0 +1,15 @@
+{
+    "coverageStore":{
+       "name":"pairsplugin",
+       "description":"pairs extension",
+       "type":"IBMPairs (Pairs Raster)",
+       "enabled":true,
+       "workspace":{
+          "name":"pairs",
+          "href":"http://localhost:9080/geoserver/rest/workspaces/pairs.json"
+       },
+       "_default":false,
+       "url":"http://www.ibm.com",
+       "coverages":"http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores/pairsplugin/coverages.json"
+    }
+ }
