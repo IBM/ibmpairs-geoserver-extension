@@ -67,19 +67,19 @@ public class PairsGeoserverExtensionConfig {
     }
 
     public static PairsGeoserverExtensionConfig getInstance() {
-        PairsGeoserverExtensionConfig prevInstance = instance;
+        if (instance != null)
+            return instance;
 
         if (instance == null)
             instance = readFromResources();
         if (instance == null)
             instance = readFromFileSystem();
         if (instance == null) {
-            logger.warn("Using default instance of config from class constants");    
+            logger.warn("Using default config from class constructor");
             instance = new PairsGeoserverExtensionConfig();
         }
 
-        if(prevInstance == null)
-            logger.info(instance.toString());
+        logger.info(instance.toString());
 
         return instance;
     }
@@ -108,7 +108,8 @@ public class PairsGeoserverExtensionConfig {
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from file system path: " + path.toString());
         } catch (NullPointerException | IOException e) {
-            logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: " + e.getMessage());
+            logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: "
+                    + e.getMessage());
         }
 
         return result;

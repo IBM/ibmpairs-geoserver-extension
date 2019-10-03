@@ -34,12 +34,13 @@ public class PairsWMSQueryParam {
      * not both. Also, Dispatcher.REQUEST should never be null
      */
     public static PairsWMSQueryParam getRequestQueryStringParameter() {
-        PairsWMSQueryParam queryParams = new PairsWMSQueryParam();
+        PairsWMSQueryParam queryParams = null;
 
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
         if (req == null) {
-            logger.info("ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get() is null, using defaults");
+            logger.warn("Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()");
         } else {
+            queryParams = new PairsWMSQueryParam();
             Map<String, String> kvp = req.getRawKvp();
 
             if (kvp.containsKey(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID))
@@ -55,17 +56,7 @@ public class PairsWMSQueryParam {
     }
 
     public PairsWMSQueryParam() {
-        this(PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerId(),
-                PairsGeoserverExtensionConfig.getInstance().getPairsTestLayerTimestamp(),
-                PairsGeoserverExtensionConfig.getInstance().getPairsTestStatistic());
-    }
-
-    public PairsWMSQueryParam(int layerid, long timestamp, String statistic) {
-        this.layerid = layerid;
-        this.timestamp = timestamp;
-        this.statistic = statistic;
-    }
-
+        
     public String getStatistic() {
         return this.statistic;
     }
