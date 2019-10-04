@@ -56,6 +56,7 @@ public class PairsWMSQueryParam {
     }
 
     public PairsWMSQueryParam() {
+    }
         
     public String getStatistic() {
         return this.statistic;
