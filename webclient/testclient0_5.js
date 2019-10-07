@@ -25,7 +25,7 @@ var initialMapCenter = [-90, 30];
 // Make this an array filled in dynamically by query based on user selection
 var availableLayers = {
   "modis_terra_13_prs_71": { "layerId": 71, "timestamp": 1558051200, "statistic": "mean", "maxValue": 1 },
-  "Test_Overview": { "layerId": 53080, "timestamp": 1518534000, "statistic": "mean", "maxValue": 1 }
+  "Test_Overview": { "layerId": 53080, "timestamp": 1518534000, "statistic": "mean", "maxValue": 0.3 }
 }
 // for testing [may 17 2019, jan 25 2017]
 var availableModisAqua13Timestamps = [1558051200, 1485302400];
@@ -77,7 +77,7 @@ function buildPairsLayer(layerId, timestamp, statistic, maxValue) {
         'FORMAT': 'image/png', 'WIDTH': 256, 'HEIGHT': 256, 'CRS': 'EPSG:4326',
         'ibmpairs_layerid': layerId, 'ibmpairs_timestamp': timestamp, 'ibmpairs_statistic': statistic,
         // 'sld': 'https://pairs-alpha.res.ibm.com:8080/datapreview/colortabletest.sld'
-        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.0001&max=' + maxValue + '&colorTableId=31&no_data=0&property=value&layer=pairs:pairspluginlayer'
+        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.27&max=' + maxValue + '&colorTableId=31&no_data=0&property=value&layer=pairs:pairspluginlayer'
       },
       serverType: 'geoserver'
     })

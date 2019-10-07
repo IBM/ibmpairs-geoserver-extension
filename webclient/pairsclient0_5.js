@@ -271,7 +271,7 @@ function updateMap(curTimestamp) {
 document.addEventListener('DOMContentLoaded', function () {
   map = createMap("map", []);
   addMapActions(map);
-  baseLayer.set("pairs-type", "baselayer OSM", true);
+  baseLayer.set("pairs-type", "baselayer mapbox", true);
   map.addLayer(baseLayer);
 });
 
