@@ -14,10 +14,14 @@
 
 var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-var urlBaseTest = 'http://test-pairs-dev01.watson.ibm.com:9082/api/v1/dataquery';
-var urlBase = urlBaseTest;
+var dataServiceTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:9082/api/v1/dataquery';
+var dataServiceTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:9082/api/v1/dataquery';
+var dataServiceUrl = dataServiceTestDevUrl;
 
-var urlGeoserverWmsTest = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver2-14-0/pairs/wms';
+// var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
+var geoserverWmsTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:8080/geoserver2-14-0/pairs/wms';
+var geoserverWmsTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver2-14-0/pairs/wms';
+var geoserverUrl = geoserverWmsTestDevUrl;
 
 // initial location can be determined by user location, ...
 var initialMapCenter = [-90, 30];
@@ -70,7 +74,7 @@ function buildPairsLayer(layerId, timestamp, statistic, maxValue) {
     title: "Pairs Geoscope",
     opacity: 1,
     source: new ol.source.TileWMS({
-      url: urlGeoserverWmsTest,
+      url: geoserverUrl,
       params: {
         'LAYERS': 'pairs:pairspluginlayer', 'TILED': true, 'VERSION': '1.3.0',
         // 'FORMAT': 'image/png', 'WIDTH': 512, 'HEIGHT': 512, // 'CRS': 'EPSG:4326',
@@ -299,7 +303,7 @@ function getTimestamps(layerid, lon, lat, start, end, limit) {
   }
 
   var queryString = Object.keys(params).map(key => key + '=' + params[key]).join('&')
-  var uri = urlBase + uriAction + "?" + queryString;
+  var uri = dataServiceUrl + uriAction + "?" + queryString;
   var encodedUri = encodeURI(uri);
 
   var xhttp = new XMLHttpRequest();
