@@ -1,3 +1,6 @@
+# Release 0.15.0
+* b02910e - Merge pull request #10 from physical-analytics/zippackage
+* 88f83dc - packaged as a zip file
 # Release 0.14.0
 * 5ef53b2 - Merge pull request #7 from physical-analytics/configdev
 * 0f5f769 - remove hard coded URL params for backend, add configurable

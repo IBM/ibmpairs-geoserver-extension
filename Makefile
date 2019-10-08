@@ -57,7 +57,7 @@ test:
 push: ## Pushes binaries to artifactory 
 push: 
 	@echo "push to artifactory:"
-	@cicd/artifactoryUpload.sh -i "pairs-hbase-plugin-$(PROJECT_VERSION).jar" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "jar" -b "target"
+	@cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "zip" -b "target"
 
 release: ## Creates a release by bumping versions, generating CHANGELOG updates, and tagging the project.
 release: RELEASE_TYPE=minor
