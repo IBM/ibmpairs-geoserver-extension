@@ -1,3 +1,8 @@
+# Release 0.16.0
+* 1f28a52 - Removed version from jar name
+* d468c1b - Merge branch 'zippackage' of github.ibm.com:physical-analytics/pairs-geoserver-extension into zippackage
+* 33e0d0a - Removed version from jar name
+* 69257a8 - Removed version from jar name
 # Release 0.15.0
 * b02910e - Merge pull request #10 from physical-analytics/zippackage
 * 88f83dc - packaged as a zip file
