@@ -1,5 +1,2 @@
-* 5ef53b2 - Merge pull request #7 from physical-analytics/configdev
-* 0f5f769 - remove hard coded URL params for backend, add configurable
-* 5369e09 - remove hard coded URL params for backend, add configurable
-* f887251 - Merge branch 'master' into configdev
-* 1844ffd - pluginbuildanddeloy...
+* b02910e - Merge pull request #10 from physical-analytics/zippackage
+* 88f83dc - packaged as a zip file
