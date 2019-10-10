@@ -14,25 +14,33 @@
 
 var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-// var urlGeoserverWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
-var urlGeoserverWmsTest = 'https://pairs-alpha.res.ibm.com:8080/geoserver02/pairs/wms';
-var urlGeoserverWmsProd = 'http://localhost:8080/geoserver/pairs/wms';
-var timestampServiceUrl = 'https://pairs-alpha.res.ibm.com:8080/pairsdataservice/api/v2/data/timestamp';
-// var timestampServiceUrl = 'http://pairs-web04.pok.ibm.com:9082/api/v2/data/timestamp';
+var dataServiceTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:9082/api/v1/dataquery';
+var dataServiceTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:9082/api/v1/dataquery';
+var dataServiceUrl = dataServiceTestDevUrl;
+
+// var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
+var geoserverWmsTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:8080/geoserver2-14-0/pairs/wms';
+var geoserverWmsTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver2-14-0/pairs/wms';
+var geoserverUrl = geoserverWmsTestDevUrl;
 
 // initial location can be determined by user location, ...
 var initialMapCenter = [-90, 30];
 
 // Make this an array filled in dynamically by query based on user selection
 var availableLayers = {
-  "cropfraction_49180": { "layerId": 49180, "timestamp": 1435708800, "statistic": "mean", "maxValue": 1 },
-  "cropland_49073": { "layerId": 49073, "timestamp": 1420070400, "statistic": "mean", "maxValue": 20 },
-  "cropscape_111": { "layerId": 111, "timestamp": 1514764800, "statistic": "mean", "maxValue": 20 },
-  "modis_aqua_13_prs": { "layerId": 51, "timestamp": 1558051200, "statistic": "mean", "maxValue": 20 }
+  "modis_terra_13_prs_71": { "layerId": 71, "timestamp": 1558051200, "statistic": "mean", "maxValue": 1 },
+  "Test_Overview": { "layerId": 53080, "timestamp": 1518534000, "statistic": "mean", "maxValue": 0.3 }
 }
+// for testing [may 17 2019, jan 25 2017]
+var availableModisAqua13Timestamps = [1558051200, 1485302400];
+var availableNAIPTimestamps = [1272110400, 1272974400];
 
 var map = null;
 var pairsLayer = null;
+var availableTimestamps;
+
+var currYear = 0;
+var currMonth;
 
 function showLayers() {
   if (map !== null) {
@@ -66,14 +74,14 @@ function buildPairsLayer(layerId, timestamp, statistic, maxValue) {
     title: "Pairs Geoscope",
     opacity: 1,
     source: new ol.source.TileWMS({
-      url: urlGeoserverWmsTest,
+      url: geoserverUrl,
       params: {
         'LAYERS': 'pairs:pairspluginlayer', 'TILED': true, 'VERSION': '1.3.0',
-        // 	  'FORMAT': 'image/png', 'WIDTH': 512, 'HEIGHT': 512, 'CRS': 'EPSG:4326',
+        // 'FORMAT': 'image/png', 'WIDTH': 512, 'HEIGHT': 512, // 'CRS': 'EPSG:4326',
         'FORMAT': 'image/png', 'WIDTH': 256, 'HEIGHT': 256, 'CRS': 'EPSG:4326',
         'ibmpairs_layerid': layerId, 'ibmpairs_timestamp': timestamp, 'ibmpairs_statistic': statistic,
         // 'sld': 'https://pairs-alpha.res.ibm.com:8080/datapreview/colortabletest.sld'
-        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.0001&max=' + maxValue + '&colorTableId=31&no_data=0&property=value&layer=pairs:pairspluginlayer'
+        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.27&max=' + maxValue + '&colorTableId=31&no_data=0&property=value&layer=pairs:pairspluginlayer'
       },
       serverType: 'geoserver'
     })
@@ -144,7 +152,7 @@ function createMap(targetDiv, layers) {
 
   var zoomslider = new ol.control.ZoomSlider();
   map.addControl(zoomslider);
-zoomslider.setTarget(document.getElementById('zoom_div'));
+  zoomslider.setTarget(document.getElementById('zoom_div'));
   return map;
 }
 
@@ -155,9 +163,9 @@ zoomslider.setTarget(document.getElementById('zoom_div'));
  * @param {*} map 
  */
 function addMapActions(map) {
-//  var zoomslider = new ol.control.ZoomSlider();
-//  map.addControl(zoomslider);
-//zoomslider.setTarget(document.getElementById('zoom_div'));
+  //  var zoomslider = new ol.control.ZoomSlider();
+  //  map.addControl(zoomslider);
+  //zoomslider.setTarget(document.getElementById('zoom_div'));
   map.on('dblclick', function (evt) {
     alert('map.on' + evt.coordinate);
     console.log(evt.coordinate);
@@ -199,7 +207,7 @@ function addMapActions(map) {
  * Example function if need to find interaction, 
  * for example to temporary disable by finding and invoking setActive(false)
  * However, the interaction class can be used as argument
- * to the map....Interaction functions ike map.(add)removeInteraction.
+ * to the map....Interaction functions like map.(add)removeInteraction.
  * Note: has to be modified to detect multiple instances in map.interaction Collection, chk source code see if even possible
  * @param {} map 
  * @returns interaction
@@ -214,23 +222,37 @@ function findMapInteractions(map, intClass) {
   return result;
 }
 
-function updateMap() {
+/**
+ * TODO: 
+ * - verify getTimestamps() -> api/v1/dataquery/timestamp/point hbase-data-service API works for overview layers
+ * - remove special case for modis_aqua_13
+ */
+function updateMap(curTimestamp) {
   map.removeLayer(pairsLayer);
 
   var obj = document.getElementById("selectLayer");
   var layerName = obj.options[obj.selectedIndex].text;
   var pairsLayerInfo = availableLayers[layerName];
 
-  var center = map.getView().getCenter();
-  var availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2019 04 01", 4);
-  var initialTimestamp = availableTimestamps.length > 0 ? availableTimestamps[0] : pairsLayerInfo["timestamp"];
-
-  // Special timestamp case for new overview layer modis_aqua_13_prs
-  if( layerName == "modis_aqua_13_prs"){
-    initialTimestamp = pairsLayerInfo["timestamp"];
+  if (curTimestamp < 0) {
+    var center = map.getView().getCenter();
+    // if (layerName == "modis_aqua_13_prs") {
+    //   availableTimestamps = availableModisAqua13Timestamps;
+    // } else {
+    if (layerName == "NAIP_Texas_49238") {
+      availableTimestamps = availableNAIPTimestamps;
+    } else {
+      availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2019 07 01", 1000);
+    }
+    curTimestamp = availableTimestamps.length > 0 ? availableTimestamps[0] : pairsLayerInfo["timestamp"];
   }
 
-  pairsLayer = buildPairsLayer(pairsLayerInfo["layerId"], initialTimestamp, pairsLayerInfo["statistic"], pairsLayerInfo["maxValue"]);
+  // Special timestamp case for new overview layer modis_aqua_13_prs
+  // if (layerName == "modis_aqua_13_prs") {
+  //   initialTimestamp = pairsLayerInfo["timestamp"];
+  // }
+
+  pairsLayer = buildPairsLayer(pairsLayerInfo["layerId"], curTimestamp, pairsLayerInfo["statistic"], pairsLayerInfo["maxValue"]);
 
   map.addLayer(pairsLayer);
   showLayers();
@@ -260,10 +282,28 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 function getTimestamps(layerid, lon, lat, start, end, limit) {
   var result = [];
+  var boxSizeLon = 30;
+  var boxSizeLat = 30;
+  var swLon = lon - boxSizeLon / 2;
+  var neLon = lon + boxSizeLon / 2;
+  var swLat = lat - boxSizeLat / 2;
+  var neLat = lat + boxSizeLat / 2;
 
-  var params = { layerid: layerid, lon: lon, lat: lat, starttime: start, endtime: end, limit: limit };
+  var paramsGlobal = { useoverview: true, lon: lon, lat: lat, starttime: start, endtime: end, limit: limit };
+  var paramsTiled = { useoverview: true, swlon: swLon, swlat: swLat, nelon: neLon, nelat: neLat, starttime: start, endtime: end, limit: limit };
+  var params;
+  var uriAction;
+  if (true ) {
+    params = paramsTiled;
+    uriAction = "/layer/" + layerid + "/timestamp/spatial";
+  }
+  else {
+    params = paramsGlobal;
+    uriAction = "/layer/" + layerid + "/timestamp/point";
+  }
+
   var queryString = Object.keys(params).map(key => key + '=' + params[key]).join('&')
-  var uri = timestampServiceUrl + "?" + queryString;
+  var uri = dataServiceUrl + uriAction + "?" + queryString;
   var encodedUri = encodeURI(uri);
 
   var xhttp = new XMLHttpRequest();
@@ -309,7 +349,8 @@ function getTimestamps(layerid, lon, lat, start, end, limit) {
 
 function updateTimestampDisplay() {
   buildYearSelector();
-  buildMonthSelector();
+  buildMonthSelector(0);
+  buildDaySelector(0, 0);
 }
 
 function buildYearSelector() {
@@ -318,25 +359,138 @@ function buildYearSelector() {
     table.deleteRow(0);
   row = table.insertRow();
   // else row = table.rows[0];
+  var curr = 0;
+  //  for(var i=0;i<availableTimestamps.length;i++){
+  //	if(curr != new Date(availableTimestamps[i] * 1000).getYear()){
+  //		curr = new Date(availableTimestamps[i] * 1000).getYear();
+  //		console.log(curr);
+  //cell.innerHTML = "<button>" + curr+"</button>"
+  //	}
+  //}
 
   for (var i = 0; i < 10; i++) {
     var cell = row.insertCell(0);
-    cell.innerHTML = "<span class='green'>" + (2019 - i) + "</span>";
+    //cell.innerHTML = "<span class='green'>" + (2019 - i) + "</span>";
+    cell.innerHTML = "<input type=\"button\" id=\"btn_year_" + (2019 - i) + "\" value=\"" + (2019 - i) + "\" disabled onClick=\"clickYear('" + (2019 - i) + "')\"/>"
+    //console.log(availableTimestamps.length);
     // cell.innerText = 2000 + i;
   }
+
+  for (var i = 0; i < availableTimestamps.length; i++) {
+    if (curr != new Date(availableTimestamps[i] * 1000).getUTCFullYear()) {
+      curr = new Date(availableTimestamps[i] * 1000).getUTCFullYear();
+      //console.log(curr);
+      //document.getElementById("btn_year_" + curr).disabled = false;
+
+      var btn = document.getElementById("btn_year_" + curr);
+      if (btn != null)
+        btn.disabled = false;
+      //cell.innerHTML = "<button>" + curr+"</button>"
+    }
+  }
+
+
 }
 
 
-function buildMonthSelector() {
+function clickYear(year) {
+  var btn = document.getElementById("btn_year_" + currYear);
+  if (btn != null) {
+    btn.style.background = '#FFFFFF';
+    console.log(btn);
+  }
+  currYear = year;
+  btn = document.getElementById("btn_year_" + year);
+  btn.style.background = '#00FF00';
+  buildMonthSelector(year);
+}
+
+
+function buildMonthSelector(year) {
   var table = document.getElementById("monthTable");
   if (table.rows && table.rows.length > 0)
     table.deleteRow(0);
   row = table.insertRow();
-  // else row = table.rows[0];
-
   for (var i = 0; i < 12; i++) {
     var cell = row.insertCell(0);
-    cell.innerHTML = "<span class='green'>" + months[11-i] + "</span>";
-    // cell.innerText = 2000 + i;
+    cell.innerHTML = "<input type=\"button\" id=\"btn_month_" + (11 - i) + "\" value=\"" + months[11 - i] + "\" disabled onClick=\"clickMonth('" + (11 - i) + "')\"/>"
   }
+
+  //console.log("The year" + year);
+
+  if (year > 0) {
+
+    for (var i = 0; i < availableTimestamps.length; i++) {
+      if (year == new Date(availableTimestamps[i] * 1000).getUTCFullYear()) {
+        curr = new Date(availableTimestamps[i] * 1000).getUTCMonth();
+        var btn = document.getElementById("btn_month_" + curr);
+        btn.disabled = false;
+      }
+    }
+  }
+  buildDaySelector(0, 0);
+}
+
+function clickMonth(month) {
+  var btn = document.getElementById("btn_month_" + currMonth);
+  if (btn != null) {
+    btn.style.background = '#FFFFFF';
+    console.log(btn);
+  }
+  currMonth = month;
+  btn = document.getElementById("btn_month_" + month);
+  btn.style.background = '#00FF00';
+  buildDaySelector(currYear, month);
+}
+
+
+
+function buildDaySelector(year, month) {
+  var table = document.getElementById("dayTable");
+  if (table.rows && table.rows.length > 0) {
+    table.deleteRow(0);
+    table.deleteRow(0);
+  }
+
+  row = table.insertRow();
+  for (var i = 15; i > 0; i--) {
+    var cell = row.insertCell(0);
+    cell.innerHTML = "<input type=\"button\" id=\"btn_day_" + (i) + "\" value=\"" + (i) + "\" disabled onClick=\"clickDay('" + (i) + "')\"/>"
+  }
+
+
+  row = table.insertRow();
+  for (var i = 31; i > 15; i--) {
+    var cell = row.insertCell(0);
+    cell.innerHTML = "<input type=\"button\" id=\"btn_day_" + (i) + "\" value=\"" + (i) + "\" disabled onClick=\"clickDay('" + (i) + "')\"/>"
+  }
+
+  //  console.log("The year" + year);
+  //console.log("The month" + month);
+
+  if (year > 0) {
+
+    for (var i = 0; i < availableTimestamps.length; i++) {
+      //  console.log("The year2:" + new Date(availableTimestamps[i] * 1000).getUTCFullYear());
+      //console.log("The month2:" + new Date(availableTimestamps[i] * 1000).getUTCMonth());
+      if (year == new Date(availableTimestamps[i] * 1000).getUTCFullYear() && (month) == new Date(availableTimestamps[i] * 1000).getUTCMonth()) {
+        curr = new Date(availableTimestamps[i] * 1000).getUTCDate();
+        var btn = document.getElementById("btn_day_" + curr);
+        //console.log(btn);
+        //console.log(availableTimestamps[i]);
+        //console.log(new Date(availableTimestamps[i] * 1000).getUTCDate());
+        btn.disabled = false;
+        btn.setAttribute("timestamp", availableTimestamps[i]);
+      }
+    }
+  }
+}
+
+function clickDay(day) {
+  var btn = document.getElementById("btn_day_" + day);
+  ts = btn.getAttribute("timestamp");
+  console.log("selected time: " + ts);
+  var infoDiv = document.getElementById("infoDiv");
+  infoDiv.innerText = "selected time: " + ts;
+  updateMap(ts);
 }

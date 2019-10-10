@@ -280,27 +280,45 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         // RasterUtils.defaultBufferedImage, params.envelope);
         // }
         if (dim.height == 5 && dim.width == 5) {
-            boundingBox = new BoundingBox(-180, -85, 180, 85);
-            requestImageDescriptor = new ImageDescriptor(boundingBox, 384, 768);
-        } else {
-            Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
-            double swlon = rectangle2D.getMinX();
-            double swlat = rectangle2D.getMinY();
-            double nelon = rectangle2D.getMaxX();
-            double nelat = rectangle2D.getMaxY();
-            boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
-            requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
+            // orig
+            // boundingBox = new BoundingBox(-180, -85, 180, 85);
+            // requestImageDescriptor = new ImageDescriptor(boundingBox, 384, 768);
+
+            // Testing code oct 2019
+            logger.info("Geoserver invoked special case; dim.height, width == 5 case");
+            boundingBox = new BoundingBox(-10, -10, 10, 10);
+            requestImageDescriptor = new ImageDescriptor(boundingBox, 5, 5);
+            float[] mockupImage = new float[requestImageDescriptor.height * requestImageDescriptor.width];
+            result = buildGridCoverage2D(requestImageDescriptor, mockupImage);
+            return result;
         }
 
+        Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
+        double swlon = rectangle2D.getMinX();
+        double swlat = rectangle2D.getMinY();
+        double nelon = rectangle2D.getMaxX();
+        double nelat = rectangle2D.getMaxY();
+        boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
+        requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
+
         PairsWMSQueryParam pairsParams = PairsWMSQueryParam.getRequestQueryStringParameter();
+        if (pairsParams == null) {
+            String msg = "PairsGeoserverExtension did not receive required query parameters: "
+                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID + ", "
+                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP + ", "
+                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC;
+            throw new IOException(msg);
+        }
+
         logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            URI uri = PairsUtilities.buildPairsDataServiceUri(pairsParams.getLayerid(), pairsParams.getTimestamp(), -1,
-                    pairsParams.getStatistic(), requestImageDescriptor);
+            URI uri = PairsUtilities.buildPairsDataServiceRasterUri(pairsParams.getLayerid(),
+                    pairsParams.getTimestamp(), -1, pairsParams.getStatistic(), requestImageDescriptor);
 
             HttpResponse response = PairsUtilities.getHttpResponse(uri);
-            String pairsHeaderJson = PairsUtilities.getResponseHeader(response, PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
+            String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
+                    PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
             ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
                     ImageDescriptor.class);
 
@@ -331,15 +349,17 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         // diagnostic only remove later
         // float[] minmax = PairsUtilities.getMinMax(imageVector);
 
-        if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod().equals(PairsGeoserverExtensionConfig.RASTER)) {
+        if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
+                .equals(PairsGeoserverExtensionConfig.RASTER)) {
             float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
             result = coverageFactory.create(coverageName, raster, responseEnvelope);
-        } else if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod().equals(PairsGeoserverExtensionConfig.BUFFERED_IMAGE)) {
+        } else if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
+                .equals(PairsGeoserverExtensionConfig.BUFFERED_IMAGE)) {
             BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
             result = coverageFactory.create(coverageName, image, responseEnvelope);
         } else {
-            logger.warning(
-                    "Unknown coverage generation type: " + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
+            logger.warning("Unknown coverage generation type: "
+                    + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
         }
 
         return result;
@@ -428,13 +448,23 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
     }
 
     /**
-     * Set custom IBM Pairs response headers on the WMS getMap reply
+     * This is a place to set custom IBM Pairs response headers on the WMS getMap
+     * reply Note: for the geoserver 'test' in coverage reader where
+     * dim.height=dim.width = 5 this won't provide an org.geoserver.ows.Request req
+     * = org.geoserver.ows.Dispatcher.REQUEST.get() as I don't think there is truly
+     * a WMS request.
      */
     private HttpServletResponse setPairsWMSHttpResponse() {
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
-        HttpServletResponse response = req.getHttpResponse();
-        response.setHeader(PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY, "norm is here");
-        return response;
+        if (req != null) {
+            HttpServletResponse response = req.getHttpResponse();
+            response.setHeader(PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY, "norm is here");
+            return response;
+        } else {
+            logger.warning(
+                    "Unable to retrieve HttpServletResponse on geoserver thread-local; Pairs response header not set");
+            return null;
+        }
     }
 
     /**
