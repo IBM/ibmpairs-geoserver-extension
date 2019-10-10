@@ -1,4 +1,13 @@
-* 1f28a52 - Removed version from jar name
-* d468c1b - Merge branch 'zippackage' of github.ibm.com:physical-analytics/pairs-geoserver-extension into zippackage
-* 33e0d0a - Removed version from jar name
-* 69257a8 - Removed version from jar name
+* 53e2e67 - Merge pull request #11 from physical-analytics/configdev
+* a341158 - merge with master, tested release 0.15.0 on dev01
+* 630f230 - Move to use test app01, but CORS issue in testclient
+* ca0805b - fixed bugs in testclient
+* 6379898 - debugging why base map won't load
+* 7a91e91 - add testclient and deploytestclient, tpe in PairsWMSQueryParam
+* a9f05da - fix & improve error handling in coverage reader, == 5 ...
+* efdf6a0 - fixing some issues related to height = width == 5 special case
+* 9288486 - add some of BGs scripts for auto deploy
+* 13bdb7e - work on datastore script
+* cd41739 - Merge branch 'master' into configdev
+* 4e67f6c - complete coding of config updates
+* c47912a - complete coding of config updates
