@@ -1,3 +1,7 @@
+# Release 0.18.0
+* 49401f3 - Merge pull request #15 from physical-analytics/configdev
+* 740a3f6 - change plugin logger to java.util.logging
+* 790f2ba - test client urls
 # Release 0.17.0
 * 53e2e67 - Merge pull request #11 from physical-analytics/configdev
 * a341158 - merge with master, tested release 0.15.0 on dev01

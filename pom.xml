@@ -14,7 +14,7 @@
 
   <groupId>org.geotools</groupId>
   <artifactId>pairs-geoserver-extension</artifactId>
-  <version>0.17.0</version>
+  <version>0.18.0</version>
   <packaging>jar</packaging>
 
   <name>pairs-geoserver-extension</name>
