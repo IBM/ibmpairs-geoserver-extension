@@ -6,17 +6,16 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.log4j.Logger;
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsGeoserverExtensionConfig {
-    final static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class);
+    final static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class.getName());
     public static final Path CONFIG_PATH = Paths.get(System.getProperty("user.home"), ".pairsDataService");
     public static final String CONFIG_FILE = "pairsGeoserverExtensionConfig.json";
     private static PairsGeoserverExtensionConfig instance;
@@ -75,7 +74,7 @@ public class PairsGeoserverExtensionConfig {
         if (instance == null)
             instance = readFromFileSystem();
         if (instance == null) {
-            logger.warn("Using default config from class constructor");
+            logger.warning("Using default config from class constructor");
             instance = new PairsGeoserverExtensionConfig();
         }
 
@@ -95,7 +94,7 @@ public class PairsGeoserverExtensionConfig {
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
-            logger.warn("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
+            logger.warning("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
         }
 
         return result;
@@ -108,7 +107,7 @@ public class PairsGeoserverExtensionConfig {
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from file system path: " + path.toString());
         } catch (NullPointerException | IOException e) {
-            logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: "
+            logger.warning("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: "
                     + e.getMessage());
         }
 
