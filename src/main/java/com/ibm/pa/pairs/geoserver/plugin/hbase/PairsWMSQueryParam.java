@@ -1,10 +1,9 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import org.apache.log4j.Logger;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsWMSQueryParam {
@@ -38,7 +37,7 @@ public class PairsWMSQueryParam {
 
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
         if (req == null) {
-            logger.warn("Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()");
+            logger.warning("Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()");
         } else {
             queryParams = new PairsWMSQueryParam();
             Map<String, String> kvp = req.getRawKvp();

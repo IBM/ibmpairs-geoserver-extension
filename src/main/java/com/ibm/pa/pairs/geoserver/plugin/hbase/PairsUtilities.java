@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +25,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
 
 public class PairsUtilities {
     public static Logger logger = Logger.getLogger(PairsUtilities.class.getName());
@@ -57,7 +57,7 @@ public class PairsUtilities {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             response.getEntity().writeTo(baos);
             String msg = baos.toString("UTF-8");
-            logger.error(" status: " + response.getStatusLine().getStatusCode() + ", msg: " + msg);
+            logger.severe(" status: " + response.getStatusLine().getStatusCode() + ", msg: " + msg);
             return null;
         }
 
@@ -137,7 +137,7 @@ public class PairsUtilities {
         result = inputStream2ByteArray(is);
 
         if (result.length != len) {
-            logger.error(String.format("Error bytes read: %d != contentLength: %d", result.length, len));
+            logger.severe(String.format("Error bytes read: %d != contentLength: %d", result.length, len));
         }
 
         return result;

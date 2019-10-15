@@ -19,9 +19,9 @@ var dataServiceTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:9082/api/v1/
 var dataServiceUrl = dataServiceTestDevUrl;
 
 // var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
-var geoserverWmsTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:8080/geoserver2-14-0/pairs/wms';
+var geoserverWmsTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:9080/geoserver/pairs/wms';
 var geoserverWmsTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver2-14-0/pairs/wms';
-var geoserverUrl = geoserverWmsTestDevUrl;
+var geoserverUrl = geoserverWmsTestAppUrl;
 
 // initial location can be determined by user location, ...
 var initialMapCenter = [-90, 30];
