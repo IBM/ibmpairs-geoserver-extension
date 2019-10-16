@@ -35,7 +35,10 @@ public class PairsGeoserverExtensionConfig {
      * Note: To identify the location of the hbase-data-service use either
      * pairsBaseUrlStr or the individual components of the Uri. If pairsBaseUrlStr
      * is provided it must contain all components of the url except the query
-     * parameters and will take precedence over the components.
+     * parameters and will take precedence over the components
+     * 
+     * to ignore in PairsGeo...Config.json use: "pairsDataServiceBaseRasterUrl": ""
+     * 
      */
     private String pairsDataServiceBaseRasterUrl = "http://pairs-alpha.watson.ibm.com:9082/api/v1/dataquery/raster";
 
@@ -54,6 +57,13 @@ public class PairsGeoserverExtensionConfig {
     public String createCoverage2DMethod = RASTER; // When "raster" the BufferedImage generator is not used
     public String createBufferedImageMethod = "getGrayImageFromFloatData";
 
+    /**
+     * To run from cmd line. Here are 3 options. Note: 3) requires a mvn package to
+     * collect all the jars in WEB-INF/lib
+     * 
+     * mvn exec:exec -Dexec.executable="java" -Dexec.args="-cp %classpath:.
+     * com.ibm.pa.pairs.geoserver.plugin.hbase.PairsGeoserverExtensionConfig"
+     */
     public static void main(String[] args) {
         PairsGeoserverExtensionConfig pc = getInstance();
         logger.info(pc.toString());
@@ -90,7 +100,7 @@ public class PairsGeoserverExtensionConfig {
         PairsGeoserverExtensionConfig result = null;
         Path path = null;
         try {
-            path = Paths.get(PairsGeoserverExtensionConfig.class.getClassLoader().getResource(CONFIG_FILE).toURI());
+            path = Paths.get(ClassLoader.getSystemResource(CONFIG_FILE).toURI());
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
