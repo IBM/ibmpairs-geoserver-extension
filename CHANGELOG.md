@@ -1,3 +1,5 @@
+# Release 0.19.0
+* 841ac7a - add elevation_140
 # Release 0.18.0
 * 49401f3 - Merge pull request #15 from physical-analytics/configdev
 * 740a3f6 - change plugin logger to java.util.logging
