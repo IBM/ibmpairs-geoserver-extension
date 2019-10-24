@@ -28,6 +28,7 @@ var initialMapCenter = [-90, 30];
 
 // Make this an array filled in dynamically by query based on user selection
 var availableLayers = {
+  "elevation_140": { "layerId": 140, "timestamp": 1356998400, "statistic": "mean", "maxValue": 1000 },
   "cropfraction_49180": { "layerId": 49180, "timestamp": 1435708800, "statistic": "mean", "maxValue": 1 },
   "cropland_49073": { "layerId": 49073, "timestamp": 1420070400, "statistic": "mean", "maxValue": 10 },
   "cropscape_30": { "layerId": 111, "timestamp": 1514764800, "statistic": "mean", "maxValue": 8 },
