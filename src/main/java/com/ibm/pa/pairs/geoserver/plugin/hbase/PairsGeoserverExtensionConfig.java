@@ -100,7 +100,7 @@ public class PairsGeoserverExtensionConfig {
         PairsGeoserverExtensionConfig result = null;
         Path path = null;
         try {
-            path = Paths.get(ClassLoader.getSystemResource(CONFIG_FILE).toURI());
+            path = Paths.get(PairsGeoserverExtensionConfig.class.getClassLoader().getResource(CONFIG_FILE).toURI());
             result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
