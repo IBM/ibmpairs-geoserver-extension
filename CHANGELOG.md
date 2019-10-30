@@ -1,3 +1,6 @@
+# Release 0.21.0
+* 3ee5cdb - Merge pull request #19 from physical-analytics/classpath
+* 6488ba5 - Change back to get classloader from class
 # Release 0.20.0
 * 4f58b5f - Merge pull request #18 from physical-analytics/configdev
 * aa93fdf - Merge branch 'master' into configdev

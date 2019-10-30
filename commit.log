@@ -1,4 +1,2 @@
-* 4f58b5f - Merge pull request #18 from physical-analytics/configdev
-* aa93fdf - Merge branch 'master' into configdev
-* ac1efee - change how extension picks up configuragion from system classpath, tested on dev01/geoserver02
-* c36a23c - change how extension picks up configuragion from system classpath, tested on dev01/geoserver02
+* 3ee5cdb - Merge pull request #19 from physical-analytics/classpath
+* 6488ba5 - Change back to get classloader from class
