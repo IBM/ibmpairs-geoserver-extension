@@ -2,6 +2,9 @@
 ## newer doc sept 18+ 2019
 
 ### Configuration of the plugin via screen shots
+First, go to workspaces tab and create `pairs` workspace and make it default
+
+
 The layer with the plugin:
 [link](http://pairs-alpha.res.ibm.com:8082/geoserver/web/wicket/bookmarkable/org.geoserver.web.data.layer.LayerPage?7)
 
