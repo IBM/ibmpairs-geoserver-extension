@@ -1,3 +1,5 @@
+# Release 0.22.0
+* 8750e38 - modify dependencies for geotools v22 and geoserver 2.16
 # Release 0.21.0
 * 3ee5cdb - Merge pull request #19 from physical-analytics/classpath
 * 6488ba5 - Change back to get classloader from class
