@@ -14,13 +14,13 @@
 
 var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-var dataServiceTestUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_10/dataquery';
-var dataServiceProdUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1/dataquery';
-var dataServiceUrl = dataServiceProdUrl;
+var dataServiceTestUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_dev/dataquery';
+var dataServiceProdUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_stable/dataquery';
+var dataServiceUrl = dataServiceTestUrl;
 
 // var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
-var geoserverWmsTestUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver02/pairs/wms';
-var geoserverWmsProdUrl = 'http://pairs-alpha:8080/geoserver/pairs/wms';
+var geoserverWmsTestUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver_dev/pairs/wms';
+var geoserverWmsProdUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver_stable/pairs/wms';
 var geoserverUrl = geoserverWmsTestUrl;
 
 // initial location can be determined by user location, ...
