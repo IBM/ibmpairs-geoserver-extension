@@ -1,3 +1,6 @@
+# Release 0.23.0
+* 1d5f674 - update doc and mappings to backends
+* f2e0155 - update doc and mappings to backends
 # Release 0.22.0
 * 8750e38 - modify dependencies for geotools v22 and geoserver 2.16
 # Release 0.21.0
