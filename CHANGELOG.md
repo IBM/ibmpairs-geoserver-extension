@@ -1,3 +1,6 @@
+# Release 0.24.0
+* 501f69d - Merge branch 'master' of github.ibm.com:physical-analytics/pairs-geoserver-extension
+* 5d2a95e - doc and update envs in pairsclient0_5.js
 # Release 0.23.0
 * 1d5f674 - update doc and mappings to backends
 * f2e0155 - update doc and mappings to backends
