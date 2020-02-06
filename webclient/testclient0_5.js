@@ -14,14 +14,14 @@
 
 var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-var dataServiceTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:9082/api/v1/dataquery';
-var dataServiceTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:9082/api/v1/dataquery';
-var dataServiceUrl = dataServiceTestDevUrl;
+var dataServiceStableUrl = 'http://test-pairs-app01.watson.ibm.com:9082/api/v1/dataquery';
+var dataServiceDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/api/v1/dataquery';
+var dataServiceUrl = dataServiceDevUrl;
 
 // var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
-var geoserverWmsTestAppUrl = 'http://test-pairs-app01.watson.ibm.com:9080/geoserver/pairs/wms';
-var geoserverWmsTestDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver2-14-0/pairs/wms';
-var geoserverUrl = geoserverWmsTestAppUrl;
+var geoserverWmsStableUrl = 'http://test-pairs-app01.watson.ibm.com:9080/geoserver/pairs/wms';
+var geoserverWmsDevUrl = 'http://test-pairs-dev01.watson.ibm.com:8084/geoserver/pairs/wms';
+var geoserverUrl = geoserverWmsDevUrl;
 
 // initial location can be determined by user location, ...
 var initialMapCenter = [-90, 30];
@@ -29,7 +29,8 @@ var initialMapCenter = [-90, 30];
 // Make this an array filled in dynamically by query based on user selection
 var availableLayers = {
   "modis_terra_13_prs_71": { "layerId": 71, "timestamp": 1558051200, "statistic": "mean", "maxValue": 1 },
-  "Test_Overview": { "layerId": 53080, "timestamp": 1518534000, "statistic": "mean", "maxValue": 0.3 }
+  "modis_aqua_13_prs_51": { "layerId": 51, "timestamp": 1573603200, "statistic": "mean", "maxValue": 1 },
+  "Test_Overview": { "layerId": 61431, "timestamp": 1573603200, "statistic": "mean", "maxValue": 10000 }
 }
 // for testing [may 17 2019, jan 25 2017]
 var availableModisAqua13Timestamps = [1558051200, 1485302400];
@@ -81,7 +82,7 @@ function buildPairsLayer(layerId, timestamp, statistic, maxValue) {
         'FORMAT': 'image/png', 'WIDTH': 256, 'HEIGHT': 256, 'CRS': 'EPSG:4326',
         'ibmpairs_layerid': layerId, 'ibmpairs_timestamp': timestamp, 'ibmpairs_statistic': statistic,
         // 'sld': 'https://pairs-alpha.res.ibm.com:8080/datapreview/colortabletest.sld'
-        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.27&max=' + maxValue + '&colorTableId=31&no_data=0&property=value&layer=pairs:pairspluginlayer'
+        'sld': 'https://pairs.res.ibm.com/map/sld?type=raster&min=0.27&max=' + maxValue + '&colorTableId=4&no_data=0&property=value&layer=pairs:pairspluginlayer'
       },
       serverType: 'geoserver'
     })
@@ -242,7 +243,7 @@ function updateMap(curTimestamp) {
     if (layerName == "NAIP_Texas_49238") {
       availableTimestamps = availableNAIPTimestamps;
     } else {
-      availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2019 07 01", 1000);
+      availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2021 07 01", 1000);
     }
     curTimestamp = availableTimestamps.length > 0 ? availableTimestamps[0] : pairsLayerInfo["timestamp"];
   }

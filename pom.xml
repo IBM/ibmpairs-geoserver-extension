@@ -7,15 +7,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
     <geoserver.version>2.16.0</geoserver.version>
-    <!-- Version used with Geoserver 2.14.0 With geoserver 2.16.0 some classes refactored from e.g. geotools.factory to geotools.util.factory
-      <geotools.version>20.0</geotools.version>
-    -->
+    <!-- Geoserver 2.14.0 Used <geotools.version>20.0</geotools.version>;
+    Geoserver 2.16.0 built on geotools 22.0+ which refactors some classes, e.g. geotools.factory to geotools.util.factory -->
     <geotools.version>22.0</geotools.version>
     <imageio.ext.version>1.1.25</imageio.ext.version>
     <jaiext.version>1.1.1</jaiext.version>
   </properties>
 
-  <groupId>org.geotools</groupId>
+  <groupId>com.ibm.pa.pairs</groupId>
   <artifactId>pairs-geoserver-extension</artifactId>
   <version>0.24.0</version>
   <packaging>jar</packaging>

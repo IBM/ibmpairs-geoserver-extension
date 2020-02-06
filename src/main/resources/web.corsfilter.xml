@@ -1,17 +1,22 @@
+<!-- This 'stanza' is inserted into the web.xml to enable CORS in tomcat
+     JSONP probably not needed -->
 <!-- CORS -->
-<filter>
-    <filter-name>CorsFilter</filter-name>
-    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
-    <init-param>
-        <param-name>cors.allowed.origins</param-name>
-        <param-value>*</param-value>
-    </init-param>
-</filter><filter-mapping>
-    <filter-name>CorsFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-</filter-mapping>
-<!-- JSONP -->
-<context-param>
-    <param-name>ENABLE_JSONP</param-name>
-    <param-value>true</param-value>
-</context-param>
+<web-app>
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+        <init-param>
+            <param-name>cors.allowed.origins</param-name>
+            <param-value>*</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <!-- JSONP -->
+    <context-param>
+        <param-name>ENABLE_JSONP</param-name>
+        <param-value>true</param-value>
+    </context-param>
+</web-app>

@@ -51,9 +51,9 @@
         },
         {
             "type": "java",
-            "name": "JPDA test-pairs-dev01 (8000)",
+            "name": "JPDA test-pairs-app01 (8000)",
             "request": "attach",
-            "hostName": "test-pairs-dev01.watson.ibm.com",
+            "hostName": "test-pairs-app01.watson.ibm.com",
             "port": 8000
         },
         {

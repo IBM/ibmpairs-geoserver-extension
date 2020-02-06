@@ -26,7 +26,11 @@ test client served by apache2 at `/var/www/html/datapreview/`
 
 ## pairs-alpha
 
-Geoservers for testing
+Test client `https://pairs-alpha.res.ibm.com:8080/datapreview/pairsclient.html` 
+(pairsclientN_M.html(js))
+
+Geoservers for testing:
+NOTE ibmpairs-dev.mybluemix.net points to tomcat-geoserver-stable (port 8082) which is configured in ../etc/pairs... json to go to tomcat-hbase-data-service-stable  9082
 
 ``` bash
 tomcat-geoserver-stable       geoserver         108MB        2.16.0      8082      0.21.0                22.0
@@ -66,5 +70,14 @@ nginx mapping for hbase data service above
 112                 proxy_pass http://localhost:9082/api/v1/dataquery;
 115         location  /api/v1_dev/dataquery {
 116                 proxy_pass http://localhost:9084/api/v1/dataquery;
+```
+
+## pairs-web07
+
+Note prod ibmpairs and ibmpairs-pre both go to pairs-web07. Requests routed directly from client, not via nginx?
+
+``` bash
+geoserver                    /pairs_data/www/tomcat-data-service/webapps/geoserver       9082 2.16.0  22.0? nov 7 , 2019
+pairs-data-service           /pairs_data/www/tomcat-data-service/webapps/ROOT            9082 
 ```
 

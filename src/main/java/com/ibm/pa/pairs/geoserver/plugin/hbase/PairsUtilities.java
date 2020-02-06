@@ -103,6 +103,7 @@ public class PairsUtilities {
             String path = PairsGeoserverExtensionConfig.getInstance().getGetMapRasterAction();
             builder.setScheme("http").setHost(host).setPort(port).setPath(path);
         }
+
         builder.setParameter("layerid", Integer.toString(layerId)).setParameter("timestamp", Long.toString(timestamp))
                 .setParameter("level", Long.toString(level)).setParameter("statistic", statistic)
                 .setParameter("width", Integer.toString(imageDescriptor.getWidth()))

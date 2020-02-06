@@ -53,7 +53,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URI;
-import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.media.jai.ImageLayout;
@@ -61,6 +60,7 @@ import javax.media.jai.JAI;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpResponse;
+import org.apache.log4j.Logger;
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -97,7 +97,7 @@ import org.opengis.referencing.ReferenceIdentifier;
 public class PairsCoverageReader extends AbstractGridCoverage2DReader implements GridCoverage2DReader {
     public static int GRID_WIDTH = 512;
     public static int GRID_HEIGHT = 256;
-    public static final Logger logger = Logger.getLogger(PairsCoverageReader.class.getName());
+    private Logger logger = Logger.getLogger(PairsCoverageReader.class);
 
     /**
      * TODO: get original envelope, we should keep this in class that encapsulates
@@ -120,7 +120,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         super.setlayout(new ImageLayout(0, 0, GRID_WIDTH, GRID_HEIGHT));
         coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
         if (coverageFactory == null) {
-            logger.severe("Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
+            logger.error("Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
             coverageFactory = new GridCoverageFactory();
         }
     }
@@ -329,7 +329,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
 
             result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
         } catch (Exception e) {
-            logger.severe(e.getMessage());
+            logger.error(e.getMessage());
             throw new IOException(e.getMessage());
         }
 
@@ -346,9 +346,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
                 responseImageDescriptor.getBoundingBox().getWidth(),
                 responseImageDescriptor.getBoundingBox().getHeight());
 
-        // diagnostic only remove later
-        // float[] minmax = PairsUtilities.getMinMax(imageVector);
-
         if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
                 .equals(PairsGeoserverExtensionConfig.RASTER)) {
             float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
@@ -358,7 +355,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
             BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
             result = coverageFactory.create(coverageName, image, responseEnvelope);
         } else {
-            logger.warning("Unknown coverage generation type: "
+            logger.warn("Unknown coverage generation type: "
                     + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
         }
 
@@ -441,7 +438,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
             result.setRGB(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), imageDataInt, 0,
                     imageDescriptor.getWidth());
         } catch (Exception e) {
-            logger.severe("Error getting image: " + e.getMessage());
+            logger.error("Error getting image: " + e.getMessage());
             result = PairsUtilities.getTestImageIntRGB(imageDescriptor.getWidth(), imageDescriptor.getHeight());
         }
         return result;
@@ -461,7 +458,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
             response.setHeader(PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY, "norm is here");
             return response;
         } else {
-            logger.warning(
+            logger.warn(
                     "Unable to retrieve HttpServletResponse on geoserver thread-local; Pairs response header not set");
             return null;
         }

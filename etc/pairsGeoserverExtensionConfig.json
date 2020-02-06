@@ -1,0 +1,3 @@
+{
+  "pairsDataServiceBaseRasterUrl" : "http://localhost:9084/api/v1/dataquery/raster"
+}

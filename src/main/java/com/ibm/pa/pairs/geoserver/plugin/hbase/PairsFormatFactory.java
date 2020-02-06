@@ -79,7 +79,7 @@ public class PairsFormatFactory implements GridFormatFactorySpi {
         } catch (Exception e) {
             e.printStackTrace();
             if (LOGGER.isLoggable(Level.WARNING))
-                LOGGER.log(Level.WARNING, "Unable to load" + myClassName, e);
+                LOGGER.log(Level.WARNING, "PairwsExtension (geoserverlogger) Unable to load" + myClassName, e);
         }
     }
 

@@ -1,0 +1,26 @@
+## dev and stable deployment summary for geoserver, hbase-data-service
+
+## test-pairs-dev01
+- pairs extension (and hbase-data-service) config file (persistence.xml) at location ${catalina.home}/etc (persistence.xml in /etc/META-INF)
+
+tomcat folder        webapp folder name    war size     version      port    pairs ext     ext built with geotools
+tomcat-geoserver       geoserver            108MB        2.16.0      8082      0.21.0       20.0
+tomcat-geoserver02     geoserver2-14-0      92MB         2.14.0      8084      0.21.0       20.0
+
+## pairs-alpha
+ibmpairs-dev comes into nginx location mapping for api/v1/dataquery. This mapping points to either 9082 (stable) or 9084 (dev).
+In turn, the response from hbase-data-service pairs_alpha:8080:.../webclientinfo will point to tomcat-geoserver-stable (8082) or dev (8084)
+and that geoserver extension would use the stable or dev instance of the data service respectively
+
+{Note; this replaces old nginx maps location /geoserver02/ {
+192             proxy_pass http://localhost:8082/geoserver/;]
+
+and the test client goes to var geoserverWmsTestUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver02/pairs/wms';
+
+tomcat-geoserver-stable       geoserver          108MB        2.16.0      8082      0.22.0                22.0
+tomcat-geoserver-dev        geoserver            108MB        2.16.0      8084      0.22.1                22.0 
+
+data-service folder          webapp folder    
+tomcat-hbase-data-service-stable    ROOT/         69MB        0.22.0      9082
+tomcat-hbase-data-service-dev       ROOT/                     0.23        9084   By intention can't run simultaneously with the repo spring-boot
+home/hduser/nb/hbase-data-service                 ---         0.23.0      9084   can't run concurrently with tomcat was in hbase-service-dev 

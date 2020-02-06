@@ -14,28 +14,31 @@
 
 var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
 
-var dataServiceTestUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_dev/dataquery';
-var dataServiceProdUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_stable/dataquery';
-var dataServiceUrl = dataServiceTestUrl;
+var dataServiceProdUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1/dataquery';
+var dataServiceStableUrl = 'https://pairs-alpha.res.ibm.com:8080/api/v1_stable/dataquery';
+var dataServiceDevUrl  = 'https://pairs-alpha.res.ibm.com:8080/api/v1_dev/dataquery';
+var dataServiceUrl = dataServiceDevUrl;
 
-// var geoserverUrlWmsTest = 'http://pairs-alpha.res.ibm.com:8082/geoserver/pairs/wms';
-var geoserverWmsTestUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver_dev/pairs/wms';
-var geoserverWmsProdUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver_stable/pairs/wms';
-var geoserverUrl = geoserverWmsTestUrl;
+var geoserverWmsProdUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver/pairs/wms';
+var geoserverWmsStableUrl = 'https://pairs-alpha.res.ibm.com:8080/geoserver_stable/pairs/wms';
+var geoserverWmsDevUrl  = 'https://pairs-alpha.res.ibm.com:8080/geoserver_dev/pairs/wms';
+var geoserverUrl = geoserverWmsDevUrl;
 
 // initial location can be determined by user location, ...
 var initialMapCenter = [-90, 30];
 
 // Make this an array filled in dynamically by query based on user selection
 var availableLayers = {
+  "HDSMpercentThirtyToSixtyCentimeter_290_49888": { "layerId": 49888, "timestamp": 1573732800, "statistic": "mean", "maxValue": 2000 },
   "elevation_140": { "layerId": 140, "timestamp": 1356998400, "statistic": "mean", "maxValue": 1000 },
   "cropfraction_49180": { "layerId": 49180, "timestamp": 1435708800, "statistic": "mean", "maxValue": 1 },
   "cropland_49073": { "layerId": 49073, "timestamp": 1420070400, "statistic": "mean", "maxValue": 10 },
   "cropscape_30": { "layerId": 111, "timestamp": 1514764800, "statistic": "mean", "maxValue": 8 },
   "cropscape_250": { "layerId": 48522, "timestamp": 1514764800, "statistic": "mean", "maxValue": 8 },
-  "modis_aqua_13_prs_51": { "layerId": 51, "timestamp": 1558051200, "statistic": "mean", "maxValue": 1 },
+  "modis_aqua_13_prs_51": { "layerId": 51, "timestamp": 1573603200, "statistic": "mean", "maxValue": 1 },
   "modis_aqua_13_prs_xy": { "layerId": 54, "timestamp": 1563580800, "statistic": "mean", "maxValue": 1 },
-  "landsat8_L1_NIR": { "layerId": 49670, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
+  "landsat8_L1_49670": { "layerId": 49670, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
+  "landsat8_L1_49673": { "layerId": 49673, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
   "sentinel": { "layerId": 49359, "timestamp": 1561766400, "statistic": "mean", "maxValue": 1 },
   "land-cover-mrlc-50120": { "layerId": 50120, "timestamp": 1464782400, "statistic": "mean", "maxValue": 255 },
   "NAIP_Texas_49238": { "layerId": 49238, "timestamp": 1272110400, "statistic": "mean", "maxValue": 255 }
@@ -251,7 +254,7 @@ function updateMap(curTimestamp) {
     if (layerName == "NAIP_Texas_49238") {
       availableTimestamps = availableNAIPTimestamps;
     } else {
-      availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2019 07 01", 1000);
+      availableTimestamps = getTimestamps(pairsLayerInfo["layerId"], center[0], center[1], "2010 01 01", "2021 07 01", 100);
     }
     curTimestamp = availableTimestamps.length > 0 ? availableTimestamps[0] : pairsLayerInfo["timestamp"];
   }

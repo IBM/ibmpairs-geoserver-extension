@@ -122,7 +122,7 @@ public class PairsFormat extends AbstractGridFormat implements Format {
     @Override
     public PairsCoverageReader getReader(Object source, Hints hints) {
         PairsCoverageReader result = null;
-        LOGGER.log(Level.INFO, "Source: " + source.toString());
+        LOGGER.log(Level.WARNING, "PairsExtension (geoserverlogger) Source: " + source.toString());
         if (source instanceof String) {
             try {
                 result = new PairsCoverageReader(source, hints);
