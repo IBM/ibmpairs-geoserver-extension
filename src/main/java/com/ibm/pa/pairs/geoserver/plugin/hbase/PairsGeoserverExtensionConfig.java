@@ -1,7 +1,7 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,17 +9,21 @@ import java.nio.file.Paths;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsGeoserverExtensionConfig {
+    private static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class);
+
     public static final Path CONFIG_PATH = Paths.get(System.getProperty("user.home"), ".pairsDataService");
     public static final String CONFIG_FILE = "pairsGeoserverExtensionConfig.json";
     private static PairsGeoserverExtensionConfig instance;
     public static String RASTER = "raster";
+    public static String LEVEL = "level";
     public static String BUFFERED_IMAGE = "bufferedImage";
 
     // Pairs Http header names and query string key options from client
@@ -28,7 +32,6 @@ public class PairsGeoserverExtensionConfig {
     public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid";
     public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_timestamp"; // epoch in seconds
     public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_statistic";
-    private static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class);
 
     /**
      * Dynamically configurable items
@@ -41,12 +44,11 @@ public class PairsGeoserverExtensionConfig {
      * to ignore in PairsGeo...Config.json use: "pairsDataServiceBaseRasterUrl": ""
      * 
      */
-    private String pairsDataServiceBaseRasterUrl = "http://pairs-alpha.watson.ibm.com:9082/api/v1/dataquery/raster";
-
-    private String pairsDataServiceScheme = "http";
-    private String pairsDataServiceHostname = "pairs-alpha";
+    private String pairsDataServiceBaseUrl = "https://pairs.res.ibm.com:8080/api/v1/dataquery/";
+    private String pairsDataServiceScheme = "https";
+    private String pairsDataServiceHostname = "pairs-alpha.res.ibm.com";
     private int pairsDataServicePort = 9082;
-    private String getMapRasterAction = "api/v1/dataquery/raster";
+    private String pairsDataServiceRootAction = "api/v1/dataquery/";
 
     private int pairsTestLayerId = 49180;
     private long pairsTestLayerTimestamp = 1435708800L;
@@ -57,6 +59,23 @@ public class PairsGeoserverExtensionConfig {
             "default" }; // default same as "getGrayImageFromFloatData"
     public String createCoverage2DMethod = RASTER; // When "raster" the BufferedImage generator is not used
     public String createBufferedImageMethod = "getGrayImageFromFloatData";
+
+    public URI getPairsDataServiceRootUri() throws URISyntaxException {
+        URIBuilder builder;
+        String configUri = getPairsDataServiceBaseUrl();
+        if (configUri != null && !configUri.isEmpty())
+            builder = new URIBuilder(configUri);
+        else {
+            builder = new URIBuilder();
+            String scheme = getPairsDataServiceScheme();
+            String host = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceHostname();
+            int port = PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePort();
+            String path = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceRootAction();
+            builder.setScheme(scheme).setHost(host).setPort(port).setPath(path);
+        }
+        return builder.build();
+    }
+
 
     /**
      * To run from cmd line. Here are 3 options. Note: 3) requires a mvn package to
@@ -102,7 +121,7 @@ public class PairsGeoserverExtensionConfig {
         Path path = null;
         try {
             path = Paths.get(PairsGeoserverExtensionConfig.class.getClassLoader().getResource(CONFIG_FILE).toURI());
-            result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
+            result = PairsUtilities.deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
             logger.warn("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
@@ -115,7 +134,7 @@ public class PairsGeoserverExtensionConfig {
         PairsGeoserverExtensionConfig result = null;
         Path path = Paths.get(CONFIG_PATH.toString(), CONFIG_FILE);
         try {
-            result = deserializeFile(path, PairsGeoserverExtensionConfig.class);
+            result = PairsUtilities.deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from file system path: " + path.toString());
         } catch (NullPointerException | IOException e) {
             logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: "
@@ -130,7 +149,7 @@ public class PairsGeoserverExtensionConfig {
         Files.createDirectories(path);
         path = path.resolve(CONFIG_FILE);
         path.toFile().createNewFile();
-        serializeToFile(path.toFile(), instance);
+        PairsUtilities.serializeToFile(path.toFile(), instance);
     }
 
     public String[] getListOfCreateCoverage2dMethods() {
@@ -139,34 +158,13 @@ public class PairsGeoserverExtensionConfig {
 
     @Override
     public String toString() {
-        return "PairsGeoserverExtensionConfig [getMapRasterAction=" + getMapRasterAction
-                + ", pairsDataServiceBaseRasterUrl=" + pairsDataServiceBaseRasterUrl + ", pairsDataServiceHostname="
-                + pairsDataServiceHostname + ", pairsDataServicePort=" + pairsDataServicePort
-                + ", pairsDataServiceScheme=" + pairsDataServiceScheme + ", pairsTestLayerId=" + pairsTestLayerId
-                + ", pairsTestLayerTimestamp=" + pairsTestLayerTimestamp + ", pairsTestStatistic=" + pairsTestStatistic
-                + "]";
-    }
-
-    /**
-     * Create instance of targetClass from file
-     * 
-     * @param json
-     * @return class instance
-     * @throws IOException
-     */
-    public static <T> T deserializeFile(Path path, Class<T> targetClass) throws IOException {
-        T instance = null;
-
-        ObjectMapper mapper = new ObjectMapper();
-        instance = mapper.readValue(path.toFile(), targetClass);
-
-        return instance;
-    }
-
-    public static void serializeToFile(File file, Object object)
-            throws JsonGenerationException, JsonMappingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writerWithDefaultPrettyPrinter().writeValue(file, object);
+        try {
+            return PairsUtilities.serializeObject(this);
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return e.toString();
+        }
     }
 
     public void setListOfCreateCoverage2dMethods(String[] listOfCreateCoverage2dMethods) {
@@ -237,12 +235,12 @@ public class PairsGeoserverExtensionConfig {
         this.pairsTestStatistic = pairsTestStatistic;
     }
 
-    public String getGetMapRasterAction() {
-        return getMapRasterAction;
+    public String getPairsDataServiceRootAction() {
+        return pairsDataServiceRootAction;
     }
 
-    public void setGetMapRasterAction(String getMapRasterAction) {
-        this.getMapRasterAction = getMapRasterAction;
+    public void setPairsDataServiceRootAction(String pairsDataServiceRootAction) {
+        this.pairsDataServiceRootAction = pairsDataServiceRootAction;
     }
 
     public String getPairsDataServiceScheme() {
@@ -253,12 +251,12 @@ public class PairsGeoserverExtensionConfig {
         this.pairsDataServiceScheme = pairsDataServiceScheme;
     }
 
-    public String getPairsDataServiceBaseRasterUrl() {
-        return pairsDataServiceBaseRasterUrl;
+    public String getPairsDataServiceBaseUrl() {
+        return pairsDataServiceBaseUrl;
     }
 
-    public void setPairsDataServiceBaseRasterUrl(String pairsDataServiceBaseUrl) {
-        this.pairsDataServiceBaseRasterUrl = pairsDataServiceBaseUrl;
+    public void setPairsDataServiceBaseUrl(String pairsDataServiceBaseUrl) {
+        this.pairsDataServiceBaseUrl = pairsDataServiceBaseUrl;
     }
 
 }

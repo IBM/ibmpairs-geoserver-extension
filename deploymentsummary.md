@@ -34,7 +34,7 @@ NOTE ibmpairs-dev.mybluemix.net points to tomcat-geoserver-stable (port 8082) wh
 
 ``` bash
 tomcat-geoserver-stable       geoserver         108MB        2.16.0      8082      0.21.0                22.0
-tomcat-geoserver-dev       geoserver            108MB        2.16.0      8084      0.22.1                22.0 
+tomcat-geoserver-dev       geoserver            108MB        2.16.2      8084      0.22.1                22.0 
 ```
 
 nginx mappings for geoservers

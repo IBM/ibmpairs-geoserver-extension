@@ -1,0 +1,24 @@
+{
+    "pixelType":          "fl",
+    "pixelNoDataVal":     -9999.000000,
+    "spatialRef":         "EPSG:4326",
+    "boundingBox":        {
+            "minLatitude":    51.043712,
+            "maxLatitude":    51.051904,
+            "minLongitude":   -1.430784,
+            "maxLongitude":   -1.410304
+        },
+    "pixelDimensions":    {
+            "pixelSizeDegreeLongitude":   0.000064,
+            "pixelSizeDegreeLatitude":    0.000064,
+            "numberPixelsLatitude":       128,
+            "numberPixelsLongitude":      320
+        },
+    "rasterStatistics":   {
+            "pixelMin":               0.164700,
+            "pixelMax":               0.913200,
+            "pixelCount":             29505,
+            "pixelMean":              0.389863,
+            "pixelStandardDeviation": 0.184632
+        }
+}

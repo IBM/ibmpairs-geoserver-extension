@@ -43,7 +43,6 @@ import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
 import org.geotools.parameter.DefaultParameterDescriptorGroup;
 import org.geotools.parameter.ParameterGroup;
 import org.geotools.util.factory.Hints;
-import org.opengis.coverage.grid.Format;
 import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.parameter.GeneralParameterDescriptor;
 
@@ -56,7 +55,7 @@ import org.opengis.parameter.GeneralParameterDescriptor;
  * @author Simone Giannecchini
  * @source $URL$
  */
-public class PairsFormat extends AbstractGridFormat implements Format {
+public class PairsFormat extends AbstractGridFormat {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsFormat.class);
     public static final String COVERAGE_NAME = "IBMPairs (Pairs Raster)";
     private static final String PAIRS_SCHEME = "ibmpairs";
@@ -72,7 +71,7 @@ public class PairsFormat extends AbstractGridFormat implements Format {
         writeParameters = null;
         mInfo = new HashMap<String, String>();
         mInfo.put("name", COVERAGE_NAME);
-        mInfo.put("description", "HBase connection");
+        mInfo.put("description", "Pairs HBase connection");
         mInfo.put("vendor", "IBM Pairs");
         mInfo.put("version", "0.9");
         mInfo.put("docURL", "http://www.ibmpairs.mybluemix.net");
@@ -82,11 +81,18 @@ public class PairsFormat extends AbstractGridFormat implements Format {
          * TODO: test, Norm added OVER_VIEW.. DECIMATION, .. READ_GRIDGEO is required I
          * think
          */
-        GeneralParameterDescriptor[] parameterDescriptors = new GeneralParameterDescriptor[] { READ_GRIDGEOMETRY2D,
-                OVERVIEW_POLICY, DECIMATION_POLICY };
-        DefaultParameterDescriptorGroup defaultParameterGroup = new DefaultParameterDescriptorGroup(mInfo,
-                parameterDescriptors);
-        readParameters = new ParameterGroup(defaultParameterGroup);
+        // reading parameters
+        readParameters = new ParameterGroup(
+                new DefaultParameterDescriptorGroup(mInfo, new GeneralParameterDescriptor[] { READ_GRIDGEOMETRY2D,
+                        INPUT_TRANSPARENT_COLOR, SUGGESTED_TILE_SIZE }));
+
+        /*
+         * GeneralParameterDescriptor[] parameterDescriptors = new
+         * GeneralParameterDescriptor[] { READ_GRIDGEOMETRY2D, OVERVIEW_POLICY,
+         * DECIMATION_POLICY }; DefaultParameterDescriptorGroup defaultParameterGroup =
+         * new DefaultParameterDescriptorGroup(mInfo, parameterDescriptors);
+         * readParameters = new ParameterGroup(defaultParameterGroup);
+         */
         writeParameters = null;
     }
 

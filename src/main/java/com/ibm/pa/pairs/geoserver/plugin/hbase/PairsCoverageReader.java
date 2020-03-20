@@ -53,6 +53,7 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import javax.imageio.ImageIO;
 import javax.media.jai.ImageLayout;
@@ -60,6 +61,7 @@ import javax.media.jai.JAI;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.log4j.Logger;
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
@@ -68,7 +70,6 @@ import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
-import org.geotools.coverage.grid.io.GridCoverage2DReader;
 import org.geotools.coverage.grid.io.OverviewPolicy;
 import org.geotools.data.DataSourceException;
 import org.geotools.geometry.Envelope2D;
@@ -94,30 +95,75 @@ import org.opengis.referencing.ReferenceIdentifier;
  * @author Simone Giannecchini
  * @since 2.1
  */
-public class PairsCoverageReader extends AbstractGridCoverage2DReader implements GridCoverage2DReader {
-    public static int GRID_WIDTH = 512;
-    public static int GRID_HEIGHT = 256;
-    private Logger logger = Logger.getLogger(PairsCoverageReader.class);
 
-    /**
-     * TODO: get original envelope, we should keep this in class that encapsulates
-     * the creation of this datastore.
+/**
+ * **************************************
+ * 
+ * Note regarding originalEnvelope and originalGridRange:
+ * 
+ * These refer to the BBOX (lon, lat) and grid (x,y pixels) of the data source.
+ * These objects do not seem to be used in significant way in the normal WMS
+ * raster image serving. For normal serving, the Coverage object returned by the
+ * read() method here tells Geoserver the exact BBOX and pixel range of the
+ * returned raster.
+ * 
+ * For requests like WPS we find that Geoserver queries the GeneralEnvelope and
+ * GridRange prior to issuing the call to read(). The dimensions in these
+ * objects are used by Geoserver to scale and (affine)transform the Params it
+ * passes to read(). Therefore, the original envelope and GridRange contents
+ * must be very accurate. The values must correspond to a BBOX and pixel size of
+ * the returned Pairs image in the 4326 CRS. It seems the main parameter
+ * Geoserver requires is the pixel size in degrees/pixel. Geoserver determines
+ * the scale by fitting an affine transform to the corners of the boxes returned
+ * in the envelope and gridRange. If the data source was a geotiff file, this
+ * information is available from the geotiff metadata which is directly read. In
+ * the GeoTiffReader extension the Envelope and grid range are populated by the
+ * actual dimensions of the geotiff source file. (This metadata can be displayed
+ * by, opening the goetiff in QGis. It would show that a sentinel 2 high res
+ * image geotiff created by query to the pairs client has metadata indicating
+ * its scale in X,Y are both 64uDeg/pixe. These would be exactly ratio of the
+ * size of the file in lon, lat divided by the number of pixels in X or Y
+ * respectively)
+ * 
+ * For the Pairs extension, a query must be made to pairs hbase data service to
+ * get the pairs pixel scale that the image will be returned in. For Sentinel 2,
+ * the Pairs resolution for the layer (23 which is == 2^(29-23)uDeg). Then,
+ * given that resolution we create an originalEnvelope and originalgridRange
+ * that have exactly that dimension ratio in lon,lat and x,y pixel size. Also,
+ * we make the overall dimension of the Envelope to cover the input range in the
+ * http request parameters. If the image will be returned from an overview, the
+ * scale of the overview is returned by the call to the hbase data service.
+ * Overviews could also be handle by setting a rasterModel in
+ * AbstractGridCoverage2DReader, but hope we don't have to add that
+ * complication.
+ *
+ * End Note regarding originalEnvelope and originalGridRange:
+ * *********************************************
+ */
+public class PairsCoverageReader extends AbstractGridCoverage2DReader {
+    private Logger logger = Logger.getLogger(PairsCoverageReader.class);
+    PairsWMSQueryParam httpRequestParams;
+    double pairsPixelResolution = -1;
+
+    /*
      * 
      * @throws FactoryException
+     * 
      * @throws NoSuchAuthorityCodeException
      * 
      */
     public PairsCoverageReader(Object input, Hints uHints)
-            throws DataSourceException, NoSuchAuthorityCodeException, FactoryException {
+            throws NoSuchAuthorityCodeException, FactoryException, ClientProtocolException, URISyntaxException,
+            IOException {
         super(input, uHints);
-        // update super class state
-        // coveragename should be name of store parsed from string
         coverageName = (String) source;
+        httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         crs = CRS.decode("EPSG:4326");
-        originalEnvelope = getMyOriginalEnvelope(); // temporary fix
-        originalGridRange = getMyOriginalGridRange(); // temporary fix
+        pairsPixelResolution = getPairsPixelResolution();
+        originalEnvelope = getPairsOriginalEnvelope();
+        originalGridRange = getPairsOriginalGridRange();
 
-        super.setlayout(new ImageLayout(0, 0, GRID_WIDTH, GRID_HEIGHT));
+        setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
         coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
         if (coverageFactory == null) {
             logger.error("Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
@@ -133,25 +179,25 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
      * 
      * Not sure what is the correct to do. Geomesa overrides as is done here
      */
-    @Override
-    public GeneralEnvelope getOriginalEnvelope() {
-        return this.originalEnvelope;
-    }
+    // @Override
+    // public GeneralEnvelope getOriginalEnvelope() {
+    // return this.getOriginalEnvelope(coverageName);
+    // }
 
-    @Override
-    public GeneralEnvelope getOriginalEnvelope(String coverageName) {
-        return this.originalEnvelope;
-    }
+    // @Override
+    // public GeneralEnvelope getOriginalEnvelope(String coverageName) {
+    // return this.originalEnvelope;
+    // }
 
-    @Override
-    public GridEnvelope getOriginalGridRange() {
-        return this.originalGridRange;
-    }
+    // @Override
+    // public GridEnvelope getOriginalGridRange() {
+    // return this.getOriginalGridRange(coverageName);
+    // }
 
-    @Override
-    public GridEnvelope getOriginalGridRange(String coverageName) {
-        return this.originalGridRange;
-    }
+    // @Override
+    // public GridEnvelope getOriginalGridRange(String coverageName) {
+    // return this.originalGridRange;
+    // }
 
     // @Override
     // public CoordinateReferenceSystem getCoordinateReferenceSystem() {
@@ -174,20 +220,42 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         return 1;
     }
 
-    GeneralEnvelope getMyOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
+    private double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
+        // return 0.000064;
+        ImageDescriptor imageDescriptor = httpRequestParams.getRequestImageDescriptor();
+        int layerId = this.httpRequestParams.getLayerid();
+        String statistic = this.httpRequestParams.getStatistic();
+        URI uri = PairsUtilities.buildPairsDataServiceResolutionRequestUri(layerId, statistic, imageDescriptor);
+        return PairsUtilities.getPairsResolution(uri);
+    }
+
+    GeneralEnvelope getPairsOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
         GeneralEnvelope result = null;
-        double minlon = -180, minlat = -90;
-        double maxlon = 180, maxlat = 90;
-        double[] minBB = new double[] { minlon, minlat }, maxBB = new double[] { maxlon, maxlat };
-        result = new GeneralEnvelope(minBB, maxBB);
+
+        double lonSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
+        int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
+        lonSpan = xSpan * this.pairsPixelResolution;
+        latSpan = ySpan * this.pairsPixelResolution;
+        double[] swLonLat = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getSwLonLat();
+        double[] nelonLat = { swLonLat[0] + lonSpan, swLonLat[1] + latSpan };
+
+        result = new GeneralEnvelope(swLonLat, nelonLat);
         result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
-        result.setCoordinateReferenceSystem(crs);
+
         return result;
     }
 
-    GridEnvelope getMyOriginalGridRange() {
+    GridEnvelope getPairsOriginalGridRange() {
         GeneralGridEnvelope result = null;
-        result = new GeneralGridEnvelope(new int[] { 0, 0 }, new int[] { GRID_WIDTH, GRID_HEIGHT });
+
+        double lonSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
+        int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
+
+        result = new GeneralGridEnvelope(new int[] { 0, 0 }, new int[] { xSpan, ySpan });
         return result;
     }
 
@@ -201,13 +269,11 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
     public GridCoverage2D read(GeneralParameterValue[] params) throws IOException {
         GridCoverage2D result = null;
         GeneralEnvelope requestedEnvelope = null;
-        Envelope envelope2dOrig = null;
         Rectangle dim = null;
         Color inputTransparentColor = null;
         OverviewPolicy overviewPolicy = null;
         int[] suggestedTileSize = null;
 
-        envelope2dOrig = getOriginalEnvelope();
         ImageIO io;
         ImageIOExt ioe;
 
@@ -301,22 +367,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
         requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
 
-        PairsWMSQueryParam pairsParams = PairsWMSQueryParam.getRequestQueryStringParameter();
-        if (pairsParams == null) {
-            String msg = "PairsGeoserverExtension did not receive required query parameters: "
-                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID + ", "
-                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP + ", "
-                    + PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC;
-            throw new IOException(msg);
-        }
-
+        PairsWMSQueryParam httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            URI uri = PairsUtilities.buildPairsDataServiceRasterUri(pairsParams.getLayerid(),
-                    pairsParams.getTimestamp(), -1, pairsParams.getStatistic(), requestImageDescriptor);
+            URI uri = PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams.getLayerid(),
+                    httpRequestParams.getTimestamp(), -1, httpRequestParams.getStatistic(), requestImageDescriptor);
 
-            HttpResponse response = PairsUtilities.getHttpResponse(uri);
+            HttpResponse response = PairsUtilities.getHttpRasterResponse(uri);
             String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                     PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
             ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
@@ -366,22 +424,22 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader implements
         BufferedImage result = null;
 
         switch (method) {
-        case "getGrayImageFromIntData":
-            int[] intData = PairsUtilities.floatArray2ScaledIntArray(data);
-            result = getGrayImageFromIntData(imageDescriptor, intData);
-            break;
+            case "getGrayImageFromIntData":
+                int[] intData = PairsUtilities.floatArray2ScaledIntArray(data);
+                result = getGrayImageFromIntData(imageDescriptor, intData);
+                break;
 
-        case "default":
-        case "getGrayImageFromFloatData":
-            result = getGrayImageFromFloatData(imageDescriptor, data);
-            break;
+            case "default":
+            case "getGrayImageFromFloatData":
+                result = getGrayImageFromFloatData(imageDescriptor, data);
+                break;
 
-        case "getRGBImageFromFloatData":
-            result = getRGBImageFromFloatData(imageDescriptor, data);
-            break;
+            case "getRGBImageFromFloatData":
+                result = getRGBImageFromFloatData(imageDescriptor, data);
+                break;
 
-        default:
-            throw new IllegalArgumentException("Invalid image create method: " + method);
+            default:
+                throw new IllegalArgumentException("Invalid image create method: " + method);
         }
 
         return result;
