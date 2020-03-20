@@ -1,3 +1,5 @@
+# Release 0.26.0
+* 10d7462 - Dev (#34)
 # Release 0.25.0
 * 7dedb56 - Dev (#26)
 # Release 0.24.0
