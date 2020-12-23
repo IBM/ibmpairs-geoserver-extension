@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -13,13 +14,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.log4j.Logger;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsGeoserverExtensionConfig {
-    private static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class);
+    private static Logger logger = Logger.getLogger(PairsGeoserverExtensionConfig.class.getName());
 
-    public static final Path CONFIG_PATH = Paths.get(System.getProperty("user.home"), ".pairsDataService");
     public static final String CONFIG_FILE = "pairsGeoserverExtensionConfig.json";
     private static PairsGeoserverExtensionConfig instance;
     public static String RASTER = "raster";
@@ -101,11 +100,9 @@ public class PairsGeoserverExtensionConfig {
 
         if (instance == null)
             instance = readFromResources();
-        if (instance == null)
-            instance = readFromFileSystem();
         if (instance == null) {
             instance = new PairsGeoserverExtensionConfig();
-            logger.warn("Using default config from class constructor");
+            logger.warning("Using default config from class constructor");
         }
 
         logger.info(instance.toString());
@@ -124,28 +121,14 @@ public class PairsGeoserverExtensionConfig {
             result = PairsUtilities.deserializeFile(path, PairsGeoserverExtensionConfig.class);
             logger.info("Config: " + CONFIG_FILE + ", read from resource path url: " + path.toString());
         } catch (NullPointerException | IOException | URISyntaxException e) {
-            logger.warn("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
-        }
-
-        return result;
-    }
-
-    private static PairsGeoserverExtensionConfig readFromFileSystem() {
-        PairsGeoserverExtensionConfig result = null;
-        Path path = Paths.get(CONFIG_PATH.toString(), CONFIG_FILE);
-        try {
-            result = PairsUtilities.deserializeFile(path, PairsGeoserverExtensionConfig.class);
-            logger.info("Config: " + CONFIG_FILE + ", read from file system path: " + path.toString());
-        } catch (NullPointerException | IOException e) {
-            logger.warn("Config: " + CONFIG_FILE + ", Not found on file system path: " + path.toString() + ", msg: "
-                    + e.getMessage());
+            logger.info("Config: " + CONFIG_FILE + ", Not found on resource classpath; msg: " + e.getMessage());
         }
 
         return result;
     }
 
     private static void writeToFileSystem() throws JsonGenerationException, JsonMappingException, IOException {
-        Path path = CONFIG_PATH;
+        Path path = Paths.get(System.getProperty("user.home"), "pairsDataService");;
         Files.createDirectories(path);
         path = path.resolve(CONFIG_FILE);
         path.toFile().createNewFile();

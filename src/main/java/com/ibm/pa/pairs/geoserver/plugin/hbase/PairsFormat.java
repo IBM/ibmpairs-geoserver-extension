@@ -133,7 +133,7 @@ public class PairsFormat extends AbstractGridFormat {
             try {
                 result = new PairsCoverageReader(source, hints);
             } catch (Exception e) {
-
+                LOGGER.log(Level.WARNING, "PairsFormat::()getReader: " + e.getMessage());
             }
         }
         return result;

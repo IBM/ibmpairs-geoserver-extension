@@ -54,6 +54,8 @@ import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.media.jai.ImageLayout;
@@ -62,7 +64,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.log4j.Logger;
 import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -127,7 +128,7 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * For the Pairs extension, a query must be made to pairs hbase data service to
  * get the pairs pixel scale that the image will be returned in. For Sentinel 2,
- * the Pairs resolution for the layer (23 which is == 2^(29-23)uDeg). Then,
+ * the Pairs pixel esolution for the layer (23 which is == 2^(29-23)uDeg). Then,
  * given that resolution we create an originalEnvelope and originalgridRange
  * that have exactly that dimension ratio in lon,lat and x,y pixel size. Also,
  * we make the overall dimension of the Envelope to cover the input range in the
@@ -136,12 +137,41 @@ import org.opengis.referencing.ReferenceIdentifier;
  * Overviews could also be handle by setting a rasterModel in
  * AbstractGridCoverage2DReader, but hope we don't have to add that
  * complication.
+ * 
+ * TODO: There are a couple things that need more understanding here regarding
+ * the input CRS. The native CRS for PAIRS plugin layer is 4326. That is how
+ * data stored in hbase. WHen a WMS req comes in with this CRS4326, Geoserver
+ * has no issue and builds these parameters which it logs to catalina.out. There
+ * is no projection (PROJCS) because I believe for 4326 just maps lon,lat
+ * directly out to flat pixel array.
+ * 
+ * Crs = GEOGCS["WGS 84", DATUM["World Geodetic System 1984",
+ * 
+ * When a request comes in for crs 3857 we find a slight difference in that
+ * there is a projection. But the request is handled correctly, just as for
+ * 4326.
+ * 
+ * Crs = PROJCS["WGS 84 / Pseudo-Mercator", GEOGCS["WGS 84", DATUM["World
+ * Geodetic System 1984",
+ * 
+ * 
+ * HOWEVER, the problem arises when we try to do a WPS gs:CropCoverage operation
+ * and the input layer is 3857. The originalEnvelope setting is now used
+ * extensively in the Goetools code path. It works fine if the original
+ * GeneralEnvelope is in 4326, but when its in 3857 we fail. In
+ * getPairsOriginalEnvelope() I've tried to set the CRS to the input 3857, but
+ * that still causes errors, usually a WARN coordinates seem to exceed allowed
+ * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
+ * needs more work to make Cropping work with CRS other than 4326.
+ * 
  *
  * End Note regarding originalEnvelope and originalGridRange:
  * *********************************************
  */
 public class PairsCoverageReader extends AbstractGridCoverage2DReader {
-    private Logger logger = Logger.getLogger(PairsCoverageReader.class);
+    public static final Logger logger = Logger.getLogger(PairsCoverageReader.class.getName());
+    public static int GRID_WIDTH = 512;
+    public static int GRID_HEIGHT = 256;
     PairsWMSQueryParam httpRequestParams;
     double pairsPixelResolution = -1;
 
@@ -152,21 +182,28 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
      * @throws NoSuchAuthorityCodeException
      * 
      */
-    public PairsCoverageReader(Object input, Hints uHints)
-            throws NoSuchAuthorityCodeException, FactoryException, ClientProtocolException, URISyntaxException,
-            IOException {
+    public PairsCoverageReader(Object input, Hints uHints) throws NoSuchAuthorityCodeException, FactoryException,
+            ClientProtocolException, URISyntaxException, IOException {
         super(input, uHints);
         coverageName = (String) source;
-        httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         crs = CRS.decode("EPSG:4326");
-        pairsPixelResolution = getPairsPixelResolution();
-        originalEnvelope = getPairsOriginalEnvelope();
-        originalGridRange = getPairsOriginalGridRange();
 
-        setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
+        httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
+        if (httpRequestParams != null) {
+            pairsPixelResolution = getPairsPixelResolution();
+            originalEnvelope = getPairsOriginalEnvelope();
+            originalGridRange = getPairsOriginalGridRange();
+            setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
+        } else {
+            originalEnvelope = getMyOriginalEnvelope(); // temporary fix
+            originalGridRange = getMyOriginalGridRange(); // temporary fix
+            setlayout(new ImageLayout(0, 0, getMyOriginalGridRange().getSpan(0), getMyOriginalGridRange().getSpan(1)));
+            // setlayout(new ImageLayout(0, 0, GRID_WIDTH, GRID_HEIGHT));
+        }
+
         coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
         if (coverageFactory == null) {
-            logger.error("Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
+            logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
             coverageFactory = new GridCoverageFactory();
         }
     }
@@ -229,6 +266,12 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return PairsUtilities.getPairsResolution(uri);
     }
 
+    /**
+     * 
+     * @return
+     * @throws NoSuchAuthorityCodeException
+     * @throws FactoryException
+     */
     GeneralEnvelope getPairsOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
         GeneralEnvelope result = null;
 
@@ -242,7 +285,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         double[] nelonLat = { swLonLat[0] + lonSpan, swLonLat[1] + latSpan };
 
         result = new GeneralEnvelope(swLonLat, nelonLat);
-        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
+        // result.setCoordinateReferenceSystem(CRS.decode(httpRequestParams.getCrs()));
 
         return result;
     }
@@ -387,7 +430,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
 
             result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             throw new IOException(e.getMessage());
         }
 
@@ -413,10 +456,27 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
             result = coverageFactory.create(coverageName, image, responseEnvelope);
         } else {
-            logger.warn("Unknown coverage generation type: "
+            logger.log(Level.WARNING, "Unknown coverage generation type: "
                     + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
         }
 
+        return result;
+    }
+
+    GeneralEnvelope getMyOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
+        GeneralEnvelope result = null;
+        double minlon = -180, minlat = -90;
+        double maxlon = 180, maxlat = 90;
+        double[] minBB = new double[] { minlon, minlat }, maxBB = new double[] { maxlon, maxlat };
+        result = new GeneralEnvelope(minBB, maxBB);
+        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
+        result.setCoordinateReferenceSystem(crs);
+        return result;
+    }
+
+    GridEnvelope getMyOriginalGridRange() {
+        GeneralGridEnvelope result = null;
+        result = new GeneralGridEnvelope(new int[] { 0, 0 }, new int[] { GRID_WIDTH, GRID_HEIGHT });
         return result;
     }
 
@@ -496,7 +556,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             result.setRGB(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), imageDataInt, 0,
                     imageDescriptor.getWidth());
         } catch (Exception e) {
-            logger.error("Error getting image: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error getting image: " + e.getMessage());
             result = PairsUtilities.getTestImageIntRGB(imageDescriptor.getWidth(), imageDescriptor.getHeight());
         }
         return result;
@@ -516,7 +576,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             response.setHeader(PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY, "norm is here");
             return response;
         } else {
-            logger.warn(
+            logger.log(Level.WARNING,
                     "Unable to retrieve HttpServletResponse on geoserver thread-local; Pairs response header not set");
             return null;
         }

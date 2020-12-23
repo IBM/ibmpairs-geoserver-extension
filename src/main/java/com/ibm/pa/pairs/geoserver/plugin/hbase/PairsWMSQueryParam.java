@@ -14,6 +14,7 @@ public class PairsWMSQueryParam {
     int layerid;
     long timestamp;
     String statistic;
+    String crs;
     ImageDescriptor requestImageDescriptor;
 
     /**
@@ -32,7 +33,8 @@ public class PairsWMSQueryParam {
         if (req == null) {
             String msg = "Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()";
             logger.warning(msg);
-            throw new IllegalArgumentException(msg);
+ //           throw new IllegalArgumentException(msg);
+            return null;
         }
 
         Map<String, String> kvp = req.getRawKvp();
@@ -43,6 +45,7 @@ public class PairsWMSQueryParam {
         queryParams.setLayerid(Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
         queryParams.setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
         queryParams.setStatistic(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
+        queryParams.setCrs(kvp.get("CRS"));
         String bboxStr = kvp.get("BBOX");
         StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
         double swlat = Double.parseDouble(bboxTkn.nextToken());
@@ -108,5 +111,13 @@ public class PairsWMSQueryParam {
 
     public void setRequestImageDescriptor(ImageDescriptor requestImageDescriptor) {
         this.requestImageDescriptor = requestImageDescriptor;
+    }
+
+    public String getCrs() {
+        return crs;
+    }
+
+    public void setCrs(String crs) {
+        this.crs = crs;
     }
 }
