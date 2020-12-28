@@ -51,7 +51,8 @@ public class PairsUtilities {
         System.out.println(Arrays.toString(PairsUtilities.byteArray2FloatArray(b)));
 
         try {
-            // logger.info("resolution as level: " + (deserializeJson("{\"value\": 23}", ResultWrapper.class).value));
+            // logger.info("resolution as level: " + (deserializeJson("{\"value\": 23}",
+            // ResultWrapper.class).value));
             testComputePairsResolution();
             // testHbaseServiceCall();
         } catch (Exception e) {
@@ -72,8 +73,14 @@ public class PairsUtilities {
     }
 
     public static BufferedImage testHbaseServiceCall() throws URISyntaxException, ClientProtocolException, IOException {
-        URI uri = buildPairsDataServiceRasterRequestUri(TEST_LAYERID, TEST_TIMESTAMP, -1, "Mean",
-                TEST_IMAGE_DESCRIPTOR);
+        PairsWMSQueryParam queryParams = new PairsWMSQueryParam();
+        queryParams.setLayerid(TEST_LAYERID);
+        queryParams.setTimestamp(TEST_TIMESTAMP);
+        queryParams.setLayerid(-1);
+        queryParams.setStatistic("Mean");
+        queryParams.setRequestImageDescriptor(TEST_IMAGE_DESCRIPTOR);
+
+        URI uri = buildPairsDataServiceRasterRequestUri(queryParams, TEST_IMAGE_DESCRIPTOR);
         HttpResponse response = getHttpRasterResponse(uri);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
@@ -112,21 +119,28 @@ public class PairsUtilities {
      * @return
      * @throws URISyntaxException
      */
-    public static URI buildPairsDataServiceRasterRequestUri(int layerId, long timestamp, int level, String statistic,
+    public static URI buildPairsDataServiceRasterRequestUri(PairsWMSQueryParam queryParams,
             ImageDescriptor imageDescriptor) throws URISyntaxException {
         URI result = null;
         URI baseURI = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceRootUri();
         URIBuilder builder = new URIBuilder(baseURI);
-        builder.setPath(baseURI.getPath() + "layer/" + layerId + "/raster");
+        builder.setPath(baseURI.getPath() + "layer/" + queryParams.getLayerid() + "/raster");
 
-        builder.setParameter("timestamp", Long.toString(timestamp)).setParameter("level", Long.toString(level))
-                .setParameter("statistic", statistic)
+        builder.setParameter("timestamp", Long.toString(queryParams.getTimestamp()))
+                .setParameter("level", Integer.toString(queryParams.getLevel()))
+                .setParameter("statistic", queryParams.getStatistic())
                 .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
                 .setParameter("swlon", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[0]))
                 .setParameter("swlat", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[1]))
                 .setParameter("nelon", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[0]))
                 .setParameter("nelat", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[1]));
+
+        if ((queryParams.getDimension() != null && !queryParams.getDimension().isEmpty())
+                && (queryParams.getDimensionValue() != null && !queryParams.getDimensionValue().isEmpty())) {
+            builder.setParameter("dimension", queryParams.getDimension());
+            builder.setParameter("dimensionvalue", queryParams.getDimensionValue());
+        }
 
         result = builder.build();
         return result;
