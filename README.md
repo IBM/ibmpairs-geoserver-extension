@@ -1,5 +1,19 @@
-# This README updated from Jan 14, 2019 
-## newer doc sept 18+ 2019
+# Pairs plugin for geoserver to serve images from pairs backend hbase
+## Developer docs & geoserver source code refs
+[Geotools raster](http://docs.geotools.org/latest/userguide/tutorial/raster/image.html#grid-coverage
+)
+
+[CSV file plugin from geotools](http://docs.geotools.org/latest/userguide/tutorial/datastore/intro.html)
+
+DigitalGlobal's geoserver plugin for their raster data. You can see it is less than 3,000 lines. 
+[DigitalGlobal's geoserver plugin mrgeo](https://github.com/ngageoint/mrgeo-geoserver-plugin.git)
+
+
+### Other resources
+Extension using PairsGetMapCallbackAdapter.java [ref](https://gis.stackexchange.com/questions/134667/developing-geoserver-extension)
+(https://github.com/geoserver/geoserver/blob/master/src/wms/src/main/java/org/geoserver/wms/GetMapCallback.java)
+(https://github.com/geoserver/geoserver/blob/master/src/wms/src/main/java/org/geoserver/wms/GetMapCallbackAdapter.java)
+
 
 ### Configuration of the plugin via screen shots
 First, go to workspaces tab and create `pairs` workspace and make it default
