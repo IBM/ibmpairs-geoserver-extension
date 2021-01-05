@@ -409,13 +409,20 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         double nelat = rectangle2D.getMaxY();
         boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
         requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
-
+        /**
+         * TODO: An image descriptor is built inside PairsWMSQueryParams
+         * (httpRequestParams) and should be same as the one in the local vars above.
+         * This should be confirmed, and if so then use the one in PairsWMSQueryParams
+         * and remove local var. Then, the line below should be: URI uri =
+         * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
+         */
         PairsWMSQueryParam httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
-        logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
+        logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
+        logger.info("httpRequestParams Request ImageDescriptor: "
+                + httpRequestParams.getRequestImageDescriptor().toString());
 
         try {
-            URI uri = PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams.getLayerid(),
-                    httpRequestParams.getTimestamp(), -1, httpRequestParams.getStatistic(), requestImageDescriptor);
+            URI uri = PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams, requestImageDescriptor);
 
             HttpResponse response = PairsUtilities.getHttpRasterResponse(uri);
             String pairsHeaderJson = PairsUtilities.getResponseHeader(response,

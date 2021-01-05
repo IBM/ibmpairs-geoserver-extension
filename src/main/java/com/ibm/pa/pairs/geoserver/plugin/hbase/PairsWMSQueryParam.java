@@ -14,17 +14,30 @@ public class PairsWMSQueryParam {
     int layerid;
     long timestamp;
     String statistic;
+    int level = -1;
     String crs;
     ImageDescriptor requestImageDescriptor;
+    String dimension;
+    String dimensionValue;
 
     /**
      * Return the query value contained in the threadlocal query string TODO Its
      * client issues WMS request with ibmpairs specific query strings
      * &ibmpairs_layeid=49180&ibmpairs_timestamp=123456
      * 
-     * TODO: layer, timestamp required, throw illegalArgException if either, not
-     * both. Also, Dispatcher.REQUEST should never be null Add method to verify
-     * params present
+     * Update: dec 2020, Dispatcher.REQUEST will be null on certain adminstrative
+     * requests Like create data store. In this case a null is returned and the
+     * PairsCoverageReader handles the null context for original bbox etc.
+     * 
+     * Update: Dec 2020 add simple suppport for single dimension and value.
+     * 
+     * TODO: Add general query support for multiple dimensions/values for multiple
+     * by returning multiband tif in PairsCoverageReader
+     * 
+     * TODO: Add POST support
+     * 
+     * TODO: Improve error handling returned to client.
+     * 
      */
     public static PairsWMSQueryParam getRequestQueryStringParameter() throws IllegalArgumentException {
         PairsWMSQueryParam queryParams = new PairsWMSQueryParam();
@@ -32,8 +45,8 @@ public class PairsWMSQueryParam {
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
         if (req == null) {
             String msg = "Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()";
-            logger.warning(msg);
- //           throw new IllegalArgumentException(msg);
+            logger.info(msg);
+            // throw new IllegalArgumentException(msg);
             return null;
         }
 
@@ -46,6 +59,7 @@ public class PairsWMSQueryParam {
         queryParams.setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
         queryParams.setStatistic(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
         queryParams.setCrs(kvp.get("CRS"));
+
         String bboxStr = kvp.get("BBOX");
         StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
         double swlat = Double.parseDouble(bboxTkn.nextToken());
@@ -54,10 +68,12 @@ public class PairsWMSQueryParam {
         double nelon = Double.parseDouble(bboxTkn.nextToken());
         int height = Integer.parseInt(kvp.get("HEIGHT"));
         int width = Integer.parseInt(kvp.get("WIDTH"));
-
         BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
         queryParams.setRequestImageDescriptor(new ImageDescriptor(bbox, height, width));
 
+        queryParams.setDimension(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION));
+        queryParams.setDimensionValue(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION_VALUE));
+        
         return queryParams;
     }
 
@@ -119,5 +135,29 @@ public class PairsWMSQueryParam {
 
     public void setCrs(String crs) {
         this.crs = crs;
+    }
+
+    public String getDimension() {
+        return dimension;
+    }
+
+    public void setDimension(String dimension) {
+        this.dimension = dimension;
+    }
+
+    public String getDimensionValue() {
+        return dimensionValue;
+    }
+
+    public void setDimensionValue(String dimensionValue) {
+        this.dimensionValue = dimensionValue;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }
