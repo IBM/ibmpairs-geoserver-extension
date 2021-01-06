@@ -44,6 +44,15 @@
                     <finalName>${project.artifactId}-${project.version}${branch.name}</finalName>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/src/assembly/dist.xml</descriptor>
+                    </descriptors>
+                </configuration>
+            </plugin>
         </plugins>
 
     </build>

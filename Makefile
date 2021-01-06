@@ -75,7 +75,8 @@ test:
 push: ## Pushes binaries to artifactory 
 push: 
 	@echo "push to artifactory:"
-	@cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "zip" -b "target"
+	# @cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "zip" -b "target"
+	@cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION).jar" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pa.pairs" -a "pairs-geoserver-extension" -f "jar" -b "target" -v $(PROJECT_VERSION)
 
 checkout-deps: ## Checkout scripts required for cicd flow.
 checkout-deps: env-GH_TOKEN
