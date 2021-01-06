@@ -1,3 +1,14 @@
+# Automated Release 0.29.0
+* f684133 - Norm/dimensions (#50)
+* ad40721 - Norm/dimensions (#49)
+* b61eaed - Norm/dimensions (#48)
+* 0a768b5 - Norm/dimensions (#47)
+* 55a3001 - Norm/dimensions (#46)
+* f3179af - set version to 28, this is used in demo Jan 7, 2021
+* 8679fa8 - Norm/dimensions (#45)
+* f34bce5 - update with some pointers on geotools/geoserver plugins
+* f811ee3 - moved release version to 0.27.0 in pom
+* 137821d - Dev (#43)
 # Release 0.26.0
 * 10d7462 - Dev (#34)
 # Release 0.25.0
