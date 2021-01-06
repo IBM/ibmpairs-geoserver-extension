@@ -7,15 +7,17 @@
 # The source code for this program is not published or otherwise
 # divested of its trade secrets, irrespective of what has been
 # deposited with the U.S. Copyright Office.
-
-language: java
+language: bash
+dist: xenial
+network: bluezone
+addons:
+  apt:
+    sources: docker-xenial
+services:
+- docker
 
 jdk:
   - openjdk8
-
-network: bluezone
-
-dist: xenial
 
 before_install:
 - if [ ${TRAVIS_PULL_REQUEST} = "false" ]; then make checkout-deps; fi
