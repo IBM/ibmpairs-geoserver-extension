@@ -28,6 +28,9 @@ DOCKER_VOLS=-v `pwd`:/usr/src/$(PROJECT) -v $(M2_DIR):/root/.m2 -w /usr/src/$(PR
 DUMMYINCLUDE:=$(shell if [ ! -z "cicd/Makefile.release.mk" ]; then mkdir -p cicd && touch cicd/Makefile.release.mk; fi)
 DUMMYINCLUDE:=$(shell if [ ! -z ".env" ]; then touch .env; fi)
 
+# enable for auto release version
+include .env
+include cicd/Makefile.release.mk
 
 help: # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@echo $(PROJECT):$(PROJECT_VERSION)
