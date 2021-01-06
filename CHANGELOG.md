@@ -1,3 +1,5 @@
+# Automated Release 0.32.0
+* dcd6e23 - Norm/dimensions (#53)
 # Automated Release 0.31.0
 * d3dfc47 - Norm/dimensions (#52)
 # Automated Release 0.30.0
