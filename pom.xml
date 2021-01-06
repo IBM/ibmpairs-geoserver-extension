@@ -49,7 +49,7 @@
                 <version>3.3.0</version>
                 <configuration>
                     <descriptors>
-                        <descriptor>${project.basedir}/src/assembly/dist.xml</descriptor>
+                        <descriptor>src/assembly/dist.xml</descriptor>
                     </descriptors>
                 </configuration>
             </plugin>
