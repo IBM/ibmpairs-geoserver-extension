@@ -41,6 +41,13 @@ help: # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@grep -h -E '^[a-zA-Z0-9_%/-\.]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\t\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 	@echo
 
+# add #@cp -f settings.xml $(M2_DIR) to copy ad-hoc settings if needed
+.m2:
+	mkdir -p $(M2_DIR)
+	ls -l $(M2_DIR)
+	rm -f settings.xml*
+	cp -f mvn-settings.xml $(M2_DIR)/settings.xml
+
 .env:
 	@touch .env
 
