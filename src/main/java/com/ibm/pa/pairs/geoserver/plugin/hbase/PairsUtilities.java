@@ -24,10 +24,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
@@ -63,12 +68,12 @@ public class PairsUtilities {
 
     public static void testComputePairsResolution() throws ClientProtocolException, IOException, URISyntaxException {
         PairsGeoserverExtensionConfig.getInstance()
-                .setPairsDataServiceBaseUrl("https://pairs-alpha.res.ibm.com:8080/api/v1_dev/dataquery/");
+                .setPairsDataServiceBaseUrl("https://pairs-alpha.res.ibm.com:8080/api/v1/dataquery/");
         ImageDescriptor imageDescriptor = new ImageDescriptor(new double[] { -90, 50, -80, 60 }, 256, 128);
         int layerId = 51;
         String statistic = "";
-        URI uri = PairsUtilities.buildPairsDataServiceResolutionRequestUri(layerId, statistic, imageDescriptor);
-        double r = getPairsResolution(uri);
+        
+        double r = getPairsResolution(layerId, statistic, imageDescriptor);
         logger.info("resolution: " + r);
     }
 
@@ -80,8 +85,7 @@ public class PairsUtilities {
         queryParams.setStatistic("Mean");
         queryParams.setRequestImageDescriptor(TEST_IMAGE_DESCRIPTOR);
 
-        URI uri = buildPairsDataServiceRasterRequestUri(queryParams, TEST_IMAGE_DESCRIPTOR);
-        HttpResponse response = getHttpRasterResponse(uri);
+        HttpResponse response = getRasterFromPairsDataService(queryParams, TEST_IMAGE_DESCRIPTOR);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -117,14 +121,16 @@ public class PairsUtilities {
      * swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256";
      * 
      * @return
+     * @throws IOException
+     * @throws ClientProtocolException
      * @throws URISyntaxException
      */
-    public static URI buildPairsDataServiceRasterRequestUri(PairsWMSQueryParam queryParams,
-            ImageDescriptor imageDescriptor) throws URISyntaxException {
-        URI result = null;
-        URI baseURI = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceRootUri();
-        URIBuilder builder = new URIBuilder(baseURI);
-        builder.setPath(baseURI.getPath() + "layer/" + queryParams.getLayerid() + "/raster");
+    public static HttpResponse getRasterFromPairsDataService(PairsWMSQueryParam queryParams,
+            ImageDescriptor imageDescriptor) throws ClientProtocolException, IOException, URISyntaxException {
+        HttpResponse response = null;
+
+        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
+                + "dataquery/" + "layer/" + queryParams.getLayerid() + "/raster");
 
         builder.setParameter("timestamp", Long.toString(queryParams.getTimestamp()))
                 .setParameter("level", Integer.toString(queryParams.getLevel()))
@@ -138,39 +144,29 @@ public class PairsUtilities {
 
         if ((queryParams.getDimension() != null && !queryParams.getDimension().isEmpty())
                 && (queryParams.getDimensionValue() != null && !queryParams.getDimensionValue().isEmpty())) {
-            builder.setParameter("dimension", queryParams.getDimension());
-            builder.setParameter("dimensionvalue", queryParams.getDimensionValue());
+            builder.addParameter("dimension", queryParams.getDimension());
+            builder.addParameter("dimensionvalue", queryParams.getDimensionValue());
         }
 
-        result = builder.build();
-        return result;
-    }
-
-    public static HttpResponse getHttpRasterResponse(URI uri)
-            throws ClientProtocolException, IOException, URISyntaxException {
-        HttpResponse response = null;
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet(uri);
+        HttpGet request = new HttpGet(builder.build());
         request.addHeader("accepts", "application/binary");
+
+        CredentialsProvider provider = new BasicCredentialsProvider();
+        provider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceUid(),
+                        PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
+
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
         response = httpClient.execute(request);
-        logger.info("Response Code : " + response.getStatusLine().getStatusCode());
+
         return response;
     }
 
-    /**
-     * Build uri to return pairsPixelResolution from pairs-data-service:
-     * 
-     * http://pairs.res.ibm.com:8080/api/v1/dataquery/layer/{layerid}/level?swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256;
-     * 
-     * @return
-     * @throws URISyntaxException
-     */
-    public static URI buildPairsDataServiceResolutionRequestUri(int layerId, String statistic,
-            ImageDescriptor imageDescriptor) throws URISyntaxException {
-        URI result = null;
-        URI baseURI = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceRootUri();
-        URIBuilder builder = new URIBuilder(baseURI);
-        builder.setPath(baseURI.getPath() + "layer/" + layerId + "/level");
+    public static double getPairsResolution(int layerId, String statistic, ImageDescriptor imageDescriptor)
+            throws ClientProtocolException, IOException, URISyntaxException {
+
+        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
+                + "dataquery/" + "layer/" + layerId + "/level");
 
         builder.setParameter("width", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
@@ -179,18 +175,18 @@ public class PairsUtilities {
                 .setParameter("nelon", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[0]))
                 .setParameter("nelat", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[1]));
 
-        result = builder.build();
-        return result;
-    }
-
-    public static double getPairsResolution(URI uri) throws ClientProtocolException, IOException, URISyntaxException {
-        HttpResponse response = null;
-        HttpClient httpClient = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet(uri);
+        HttpGet request = new HttpGet(builder.build());
         request.addHeader("accepts", "application/json");
-        response = httpClient.execute(request);
-        String json = EntityUtils.toString(response.getEntity());
 
+        CredentialsProvider provider = new BasicCredentialsProvider();
+        provider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceUid(),
+                        PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
+
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+       
+        HttpResponse response = httpClient.execute(request);
+        String json = EntityUtils.toString(response.getEntity());
         ResultWrapper rw = deserializeJson(json, ResultWrapper.class);
         double resolution = 1e-06 * Math.pow(2, 29 - rw.value);
         return resolution;

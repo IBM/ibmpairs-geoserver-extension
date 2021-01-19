@@ -45,11 +45,9 @@ public class PairsGeoserverExtensionConfig {
      * to ignore in PairsGeo...Config.json use: "pairsDataServiceBaseRasterUrl": ""
      * 
      */
-    private String pairsDataServiceBaseUrl = "https://pairs.res.ibm.com:8080/api/v1/dataquery/";
-    private String pairsDataServiceScheme = "https";
-    private String pairsDataServiceHostname = "pairs-alpha.res.ibm.com";
-    private int pairsDataServicePort = 9082;
-    private String pairsDataServiceRootAction = "api/v1/dataquery/";
+    private String pairsDataServiceBaseUrl = "https://pairs.res.ibm.com:8080/api/v1/";
+    private String pairsDataServiceUid = "";
+    private String pairsDataServicePw = "";
 
     private int pairsTestLayerId = 49180;
     private long pairsTestLayerTimestamp = 1435708800L;
@@ -60,23 +58,6 @@ public class PairsGeoserverExtensionConfig {
             "default" }; // default same as "getGrayImageFromFloatData"
     public String createCoverage2DMethod = RASTER; // When "raster" the BufferedImage generator is not used
     public String createBufferedImageMethod = "getGrayImageFromFloatData";
-
-    public URI getPairsDataServiceRootUri() throws URISyntaxException {
-        URIBuilder builder;
-        String configUri = getPairsDataServiceBaseUrl();
-        if (configUri != null && !configUri.isEmpty())
-            builder = new URIBuilder(configUri);
-        else {
-            builder = new URIBuilder();
-            String scheme = getPairsDataServiceScheme();
-            String host = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceHostname();
-            int port = PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePort();
-            String path = PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceRootAction();
-            builder.setScheme(scheme).setHost(host).setPort(port).setPath(path);
-        }
-        return builder.build();
-    }
-
 
     /**
      * To run from cmd line. Here are 3 options. Note: 3) requires a mvn package to
@@ -146,7 +127,6 @@ public class PairsGeoserverExtensionConfig {
         try {
             return PairsUtilities.serializeObject(this);
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return e.toString();
         }
@@ -180,22 +160,6 @@ public class PairsGeoserverExtensionConfig {
         this.createBufferedImageMethod = createBufferedImageMethod;
     }
 
-    public String getPairsDataServiceHostname() {
-        return this.pairsDataServiceHostname;
-    }
-
-    public void setPairsDataServiceHostname(String pairsDataServiceHostname) {
-        this.pairsDataServiceHostname = pairsDataServiceHostname;
-    }
-
-    public int getPairsDataServicePort() {
-        return this.pairsDataServicePort;
-    }
-
-    public void setPairsDataServicePort(int pairsDataServicePort) {
-        this.pairsDataServicePort = pairsDataServicePort;
-    }
-
     public int getPairsTestLayerId() {
         return this.pairsTestLayerId;
     }
@@ -220,28 +184,28 @@ public class PairsGeoserverExtensionConfig {
         this.pairsTestStatistic = pairsTestStatistic;
     }
 
-    public String getPairsDataServiceRootAction() {
-        return pairsDataServiceRootAction;
-    }
-
-    public void setPairsDataServiceRootAction(String pairsDataServiceRootAction) {
-        this.pairsDataServiceRootAction = pairsDataServiceRootAction;
-    }
-
-    public String getPairsDataServiceScheme() {
-        return pairsDataServiceScheme;
-    }
-
-    public void setPairsDataServiceScheme(String pairsDataServiceScheme) {
-        this.pairsDataServiceScheme = pairsDataServiceScheme;
-    }
-
     public String getPairsDataServiceBaseUrl() {
         return pairsDataServiceBaseUrl;
     }
 
     public void setPairsDataServiceBaseUrl(String pairsDataServiceBaseUrl) {
         this.pairsDataServiceBaseUrl = pairsDataServiceBaseUrl;
+    }
+
+    public String getPairsDataServiceUid() {
+        return pairsDataServiceUid;
+    }
+
+    public void setPairsDataServiceUid(String pairsDataServiceUid) {
+        this.pairsDataServiceUid = pairsDataServiceUid;
+    }
+
+    public String getPairsDataServicePw() {
+        return pairsDataServicePw;
+    }
+
+    public void setPairsDataServicePw(String pairsDataServicePw) {
+        this.pairsDataServicePw = pairsDataServicePw;
     }
 
 }

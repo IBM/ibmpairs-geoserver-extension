@@ -136,4 +136,11 @@
         </repository>
     </repositories>
 
+    <distributionManagement>
+        <repository>
+           <id>artifactory</id>
+           <url>https://na.artifactory.swg-devops.com:443/artifactory/wcp-pairsgeos-release-generic-local/</url>
+        </repository>
+     </distributionManagement>
+
 </project>

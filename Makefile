@@ -80,7 +80,7 @@ push:
 	@echo "push to artifactory:"
 	# @cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "zip" -b "target"
 	@cicd/artifactoryUpload.sh -i "$(PROJECT_ARTIFACT_ID)-$(PROJECT_VERSION).jar" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "$(PROJECT_GROUP_ID)" -a "$(PROJECT_ARTIFACT_ID)" -f "jar" -b "target" -v $(PROJECT_VERSION)
-	@cicd/artifactoryUpload.sh -i "pom.xml" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "$(PROJECT_GROUP_ID)" -a "$(PROJECT_ARTIFACT_ID)" -f "xml" -b "." -v $(PROJECT_VERSION)
+	@curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_KEY}" -T pom.xml "https://na.artifactory.swg-devops.com/artifactory/wcp-pairsgeos-release-generic-local/$(PROJECT_GROUP_ID)/$(PROJECT_ARTIFACT_ID)/$(PROJECT_VERSION)/pom.xml"
 
 checkout-deps: ## Checkout scripts required for cicd flow.
 checkout-deps: env-GH_TOKEN

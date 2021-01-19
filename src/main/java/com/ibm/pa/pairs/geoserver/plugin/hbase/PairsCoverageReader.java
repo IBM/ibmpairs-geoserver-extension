@@ -262,8 +262,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         ImageDescriptor imageDescriptor = httpRequestParams.getRequestImageDescriptor();
         int layerId = this.httpRequestParams.getLayerid();
         String statistic = this.httpRequestParams.getStatistic();
-        URI uri = PairsUtilities.buildPairsDataServiceResolutionRequestUri(layerId, statistic, imageDescriptor);
-        return PairsUtilities.getPairsResolution(uri);
+        return PairsUtilities.getPairsResolution(layerId, statistic, imageDescriptor);
     }
 
     /**
@@ -416,15 +415,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
          * and remove local var. Then, the line below should be: URI uri =
          * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
          */
-        PairsWMSQueryParam httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
+        PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
         logger.info("httpRequestParams Request ImageDescriptor: "
-                + httpRequestParams.getRequestImageDescriptor().toString());
+                + pairsWMSQueryParams.getRequestImageDescriptor().toString());
 
         try {
-            URI uri = PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams, requestImageDescriptor);
-
-            HttpResponse response = PairsUtilities.getHttpRasterResponse(uri);
+            HttpResponse response = PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams, requestImageDescriptor);
+        
             String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                     PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
             ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
