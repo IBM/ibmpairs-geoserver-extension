@@ -40,11 +40,13 @@ import java.util.logging.Logger;
 
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
+import org.geotools.parameter.DefaultParameterDescriptor;
 import org.geotools.parameter.DefaultParameterDescriptorGroup;
 import org.geotools.parameter.ParameterGroup;
 import org.geotools.util.factory.Hints;
 import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.parameter.GeneralParameterDescriptor;
+import org.opengis.parameter.ParameterDescriptor;
 
 /**
  * Provides basic information about the Pairs format IO. This is currently an
@@ -63,9 +65,6 @@ public class PairsFormat extends AbstractGridFormat {
     /**
      * Creates a new instance of PairsFormat from call to
      * PairsFormatFactory.createFormat()
-     * 
-     * 
-     * 
      */
     public PairsFormat() {
         writeParameters = null;
