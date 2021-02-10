@@ -17,7 +17,9 @@
 package com.ibm.pa.pairs.geoserver.plugin.datastore;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 import org.geotools.data.DefaultServiceInfo;
 import org.geotools.data.store.ContentDataStore;
@@ -35,8 +37,11 @@ import org.opengis.feature.type.Name;
  * @source $URL$
  */
 public class PairsDataStore extends ContentDataStore {
+        Map<String, Serializable> params;
 
-        public PairsDataStore() {
+        public PairsDataStore(Map<String, Serializable> params) {
+                super();
+                this.params = params;
                 DefaultServiceInfo defaultServiceInfo = (DefaultServiceInfo) super.getInfo();
                 defaultServiceInfo.setTitle("IBM Pairs data store info");
                 defaultServiceInfo.setDescription("Data store for Pairs virtual layers");

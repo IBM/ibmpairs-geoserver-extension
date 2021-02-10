@@ -37,23 +37,14 @@ import org.geotools.data.DataStoreFactorySpi;
  */
 public class PairsDataStoreFactory implements DataStoreFactorySpi {
     private final static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsDataStoreFactory.class);
-    public static final Param PAIRS_DATASTORE_PARAM = new Param("url", String.class, "unique id for pairs layer", true,
-            "ibmpairs://pairs.ibm.com/layer1");
+    public static final Param PAIRS_DATASTORE_URL_PARAM = new Param("ibmpairs", String.class, "unique id for pairs layer",
+            true, "ibmpairs://pairs.ibm.com/layer1");
 
-    /**
-     * Tests if the provided url can be handled by this factory.
-     *
-     * @param url URL to a real file (may not be local)
-     * @return <code>true</code> if this url can when this dataStore can resolve and
-     *         read the data specified
-     */
-    public boolean canProcess(URL url) {
-        LOGGER.info("canProcess(); url: " + url.toString());
-        if (url.getProtocol().toLowerCase().startsWith("ibmpairs"))
-            return true;
-        else
-            return false;
-    };
+    @Override
+    public boolean canProcess(Map<String, Serializable> params) {
+        boolean chk = DataStoreFactorySpi.super.canProcess(params);
+        return chk;
+    }
 
     /**
      * The typeName represented by the provided url.
@@ -65,41 +56,38 @@ public class PairsDataStoreFactory implements DataStoreFactorySpi {
      * @throws IOException
      */
     public String getTypeName(URL url) throws IOException {
-        return null;
+        return "PairsDataStoreFactory:TypeName " + url;
     }
 
     @Override
     public String getDisplayName() {
-        // TODO Auto-generated method stub
-        return null;
+        return "PairsDataStoreFactory:DisplayName IBM Pairs";
     }
 
     @Override
     public String getDescription() {
-        // TODO Auto-generated method stub
-        return null;
+        return "PairsDataStoreFactory:Description PAIRS curated data in CRS 4326";
     }
 
     @Override
     public Param[] getParametersInfo() {
-        return new Param[] { PAIRS_DATASTORE_PARAM };
+        return new Param[] { PAIRS_DATASTORE_URL_PARAM };
     }
 
     @Override
     public boolean isAvailable() {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public DataStore createDataStore(Map<String, Serializable> params) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        PairsDataStore dataStore = new PairsDataStore(params);
+        dataStore.setDataStoreFactory(this);
+        return dataStore;
     }
 
     @Override
     public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        return createDataStore(params);
     }
 }
