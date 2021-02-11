@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.geotools.data.DataStore;
@@ -36,12 +38,17 @@ import org.geotools.data.DataStoreFactorySpi;
  * @source $URL$
  */
 public class PairsDataStoreFactory implements DataStoreFactorySpi {
-    private final static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsDataStoreFactory.class);
-    public static final Param PAIRS_DATASTORE_URL_PARAM = new Param("ibmpairs", String.class, "unique id for pairs layer",
+    private final static Logger logger = org.geotools.util.logging.Logging.getLogger(PairsDataStoreFactory.class);
+    public static final Param PAIRS_DATASTORE_URL_PARAM = new Param("url", String.class, "unique id for pairs layer",
             true, "ibmpairs://pairs.ibm.com/layer1");
 
     @Override
     public boolean canProcess(Map<String, Serializable> params) {
+        for(String key : params.keySet()) {
+            Object value = params.get(key);
+            logger.info( "canProcess(): key: " + key + ", value: " + value);
+        }
+
         boolean chk = DataStoreFactorySpi.super.canProcess(params);
         return chk;
     }
