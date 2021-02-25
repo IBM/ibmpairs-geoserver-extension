@@ -62,6 +62,57 @@ import org.geotools.coverage.grid.io.GridFormatFactorySpi;
  * @author Simone Giannecchini
  * @source $URL$
  */
+
+/**
+ * Notes on createFormat()
+ * 
+ * When Geoserver UI 'datastores' is invoked, the createFormat() method of all
+ * registered implementers of GridFormatFactorySpi are called. (This will be in
+ * the 'raster' section of the UI list which splits datastores into vector,
+ * raster). The AbstractGridFormat( PairsFormat) returned from createFormat()
+ * fills in the minfo structure to provide info about the datastore displayed in
+ * the UI.
+ * 
+ * When a new datastore instance is created, we enter a URL which must be valid
+ * in the field. ( I believe we could also enter a valid filename, see below) By
+ * doing so, an org.geotools.data.DataStore is created, the geotools default
+ * implmentation of datastore for a URL is created. (I don't know exactly which
+ * class this is yet.) To add a unique url scheme like ibmpairs:// we would add
+ * to the underlying java URL as per note from Fernando Mino in response to my
+ * post:
+ * 
+ * http://osgeo-org.1560.x6.nabble.com/Geoserver-extension-to-use-custom-schema-when-crateing-new-data-store-td5392397.html
+ * 
+ * **************
+ * email from Fernando Mino 1-21-2019
+ * 
+ * Hi Norman.
+ * 
+ * Usually in Store factories it's used an URL typed parameter to parse the
+ * "url" user input as we see on Shapefile one:
+ * 
+ * public static final Param URLP = new Param( "url", URL.class, "url to a .shp
+ * file", true, null, new KVP(Param.EXT, "shp"));
+ * 
+ * Since Java URL class support only few well known protocols by default (http,
+ * file, jar...) you could need implement a custom handler for your new URL
+ * protocol in first place. Good old BalusC explains how to create one in this
+ * link: https://stackoverflow.com/a/26409796/3662679
+ * 
+ * Now if this stuff is too much overhead and you don't need over-complicate,
+ * you could use a generic String typed parameter and parse/validate it on your
+ * factory class:
+ * 
+ * public static final Param CUSTOM_URL = new Param( "url", String.class, ...
+ * 
+ * --------------
+ * 
+ * Alternatively, I think, we could register our own DataStore by implementing
+ * org.geotools.data.DataStoreFactorySpi, register in META-INF. See for example
+ * public class ShapefileDataStoreFactory implements FileDataStoreFactorySpi
+ * {...} Then we add Params as shown in that class to express the valid parsing
+ * of the string entered in the Geoserver UI when creating a new DataStore.
+ */
 public class PairsFormatFactory implements GridFormatFactorySpi {
     private final static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsFormatFactory.class);
 
@@ -71,7 +122,6 @@ public class PairsFormatFactory implements GridFormatFactorySpi {
     /**
      * TODO: not sure this test is necessary
      */
-    // public final static String myClassName = "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsFormatFactory";
     static {
         String myClassName = PairsFormatFactory.class.getName();
         try {
@@ -79,7 +129,7 @@ public class PairsFormatFactory implements GridFormatFactorySpi {
         } catch (Exception e) {
             e.printStackTrace();
             if (LOGGER.isLoggable(Level.WARNING))
-                LOGGER.log(Level.WARNING, "PairwsExtension (geoserverlogger) Unable to load" + myClassName, e);
+                LOGGER.log(Level.WARNING, "PairsExtension (geoserverlogger) Unable to load" + myClassName, e);
         }
     }
 
@@ -87,43 +137,14 @@ public class PairsFormatFactory implements GridFormatFactorySpi {
     }
 
     /**
-     * When Geoserver UI 'datastores' is invoked, the createFormat() method of all
-     * registered implementers of GridFormatFactorySpi are called. (This will be in
-     * the 'raster' section of the UI list which splits datastores into vector,
-     * raster). The AbstractGridFormat( PairsFormat) returned from createFormat()
-     * fills in the minfo structure to provide info about the datastore displayed in
-     * the UI.
-     * 
-     * When a new datastore instance is created, we enter a URL which must be valid
-     * in the field. ( I believe we could also enter a valid filename, see below) By
-     * doing so, an org.geotools.data.DataStore is created, the geotools default
-     * implmentation of datastore for a URL is created. (I don't know exactly which
-     * class this is yet.) To add a unique url scheme like ibmpairs:// we would add
-     * to the underlying java URL as per note from Fernando Mino in response to my post:
-     * 
-     * http://osgeo-org.1560.x6.nabble.com/Geoserver-extension-to-use-custom-schema-when-crateing-new-data-store-td5392397.html
-     * 
-     *  - Since Java URL
-     * class support only few well known protocols by default (http, file, jar...)
-     * you could need implement a custom handler for your new URL protocol in first
-     * place. Good old BalusC explains how to create one in this link:
-     * https://stackoverflow.com/a/26409796/3662679 - 
-     * Alternatively we could registor our own DataStore by implementing org.geotools.data.DataStoreFactorySpi,
-     * register in META-INF. See for example public class ShapefileDataStoreFactory implements FileDataStoreFactorySpi {...}
-     * Then we add Params as shown in that class to express the valide parsing of the string entered in the 
-     * Geoserver UI when creating a new DataStore.
-     * 
-     * 
      * Creates and returns a new instance of the <CODE>PairsPairsFormat</CODE> class
      * if the required libraries are present. If JAI and JAI Image I/O are not
-     * present, will throw an <CODE>
-     * 
-     * 
-     * UnsupportedOperationException</CODE>.
+     * present, will throw <CODE>UnsupportedOperationException</CODE>
      *
      * @return <CODE>PairsFormat</CODE> object.
      * @throws UnsupportedOperationException if this format is unavailable.
      */
+    @Override
     public AbstractGridFormat createFormat() {
         if (!isAvailable()) {
             throw new UnsupportedOperationException("The Pairs plugin requires the JAI and JAI ImageI/O libraries!");
@@ -135,20 +156,23 @@ public class PairsFormatFactory implements GridFormatFactorySpi {
     /**
      * Informs the caller whether the libraries required by the Pairs reader are
      * installed or not.
+     * 
+     * todo: Feb 8 2021, Return true as the libraries come with the build
      *
      * @return availability of the Pairs format.
      */
+    @Override
     public boolean isAvailable() {
         boolean available = true;
 
         // if these classes are here, then the runtine environment has
         // access to JAI and the JAI ImageI/O toolbox.
-        try {
-            Class.forName("javax.media.jai.JAI");
-            Class.forName("com.sun.media.jai.operator.ImageReadDescriptor");
-        } catch (ClassNotFoundException cnf) {
-            available = false;
-        }
+        // try {
+        //     Class.forName("javax.media.jai.JAI");
+        //     Class.forName("com.sun.media.jai.operator.ImageReadDescriptor");
+        // } catch (ClassNotFoundException cnf) {
+        //     available = false;
+        // }
 
         return available;
     }

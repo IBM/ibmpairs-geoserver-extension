@@ -51,8 +51,8 @@ import java.awt.image.ImageObserver;
 import java.awt.image.Raster;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
+import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +72,6 @@ import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.OverviewPolicy;
-import org.geotools.data.DataSourceException;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.image.io.ImageIOExt;
@@ -164,7 +163,10 @@ import org.opengis.referencing.ReferenceIdentifier;
  * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
  * needs more work to make Cropping work with CRS other than 4326.
  * 
- *
+ * I recently found some very useful static utilities in geotools Coveridge class to convert coverages
+ * between CRS. So can try to covert 4326 to 3857 when we return it from read(..).
+ * 
+ * 
  * End Note regarding originalEnvelope and originalGridRange:
  * *********************************************
  */
@@ -185,7 +187,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     public PairsCoverageReader(Object input, Hints uHints) throws NoSuchAuthorityCodeException, FactoryException,
             ClientProtocolException, URISyntaxException, IOException {
         super(input, uHints);
-        coverageName = (String) source;
+        coverageName = input.toString();
         crs = CRS.decode("EPSG:4326");
 
         httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
@@ -421,8 +423,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 + pairsWMSQueryParams.getRequestImageDescriptor().toString());
 
         try {
-            HttpResponse response = PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams, requestImageDescriptor);
-        
+            HttpResponse response = PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams,
+                    requestImageDescriptor);
+
             String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                     PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
             ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,

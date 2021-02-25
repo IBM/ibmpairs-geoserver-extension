@@ -42,12 +42,18 @@ BODY_FILE="scripts/pairsdatastore.json"
 RESULT=$($CMD)
 echo RESULT
 
+# Query all coverage stores
+curl -v -u admin:geoserver -H "Content-Type: application/json" http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores
+
 # create coveragestore
 curl -v -u admin:geoserver -XPOST -H "Content-Type: application/json" --data "@CoverageStores.json" http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores
 
-# Query and delete coveragestore
-curl -v -u admin:geoserver -H "Content-Type: application/json" http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores
+# delete a store
 # curl -v -u admin:geoserver -XDELETE -H "Content-Type: application/json"  http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores/pairsplugin
+
+# query coverages for a store. The json response can be used to create the coverage, see Coverage.json
+curl -v -u admin:geoserver -H "Content-Type: application/json" http://localhost:8080/geoserver/rest/workspaces/pairs/coveragestores/pairsplugin/coverages/pairspluginlayer
+curl -v -u admin:geoserver -H "Content-Type: application/json" http://localhost:8080/geoserver/rest/workspaces/pairs/coveragestores/pairscoverage1/coverages/pairsplugincoverage1
 
 # Create Coverage
 curl -v -u admin:geoserver -H "Content-Type: application/json" http://localhost:9080/geoserver/rest/workspaces/pairs/coveragestores/pairsplugin/coverages.json

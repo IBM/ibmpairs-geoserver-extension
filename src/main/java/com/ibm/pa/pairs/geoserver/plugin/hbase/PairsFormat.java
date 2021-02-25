@@ -34,10 +34,15 @@
  */
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
+import java.io.File;
+import java.io.InputStream;
+import java.net.URLConnection;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.imageio.GeoToolsWriteParams;
 import org.geotools.parameter.DefaultParameterDescriptorGroup;
@@ -47,10 +52,33 @@ import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.parameter.GeneralParameterDescriptor;
 
 /**
- * Provides basic information about the Pairs format IO. This is currently an
- * extension of the Geotools AbstractGridFormat because the stream and file GCEs
- * will pick it up if it extends AbstractGridFormat.
- *
+ * Provides basic information about the Pairs format IO. An instance is created
+ * from the PairsFormatFactory which is found during the factory scan of the SPI
+ * ServiceRegistry.
+ * 
+ * Example code see geotools implementation of Geotiff plugin. Geotools github
+ * repo and navigate to geotiff plugin at
+ * modules/plugin/geotiff/src/...../GeoTiffFormat.java (pkg
+ * org.geotools.gce.geotiff)
+ * 
+ * The 'source' object should be a URL, either http or file protocol. It is
+ * specified during creation through the Geoserver UI 'add data store' dialog,
+ * or via the Geoserver REST API. A quick validity test is done is done at
+ * creation by Geoserver. For http, an openConnection must respond with a stream
+ * (as of Geoserver 2.18 the stream is not read) so the endpoint must be valid.
+ * for file:// the file must exist.
+ * 
+ * NOTE: File based connections, can be local to each machine. For a virtual
+ * layer the file just has to exist, it can be empty. If needed, the file can
+ * include some metadata for each pairs plugin virtual layer. Http based
+ * connections can be global so the connection shared for all Geoservers
+ * 
+ * TODO: For better support of http connections, add http GET endpoint in pairs
+ * hbase data service listening on V2/pairsplugin/* The Geoserver connection url
+ * would be http://pairs.res.ibm.com/pairsdataservice/v2/pairsplugin/conn1,
+ * ..conn2, ... These endpoints could be in turn backed by files. And could be
+ * read to support extra metadata.
+ * 
  * @author Bryce Nordgren, USDA Forest Service
  * @author Simone Giannecchini
  * @source $URL$
@@ -58,31 +86,25 @@ import org.opengis.parameter.GeneralParameterDescriptor;
 public class PairsFormat extends AbstractGridFormat {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsFormat.class);
     public static final String COVERAGE_NAME = "IBMPairs (Pairs Raster)";
-    private static final String PAIRS_SCHEME = "ibmpairs";
+    private static final String[] PAIRS_SIGNATURE = { "ibm", "pairs", "pairsplugin"};
 
     /**
      * Creates a new instance of PairsFormat from call to
      * PairsFormatFactory.createFormat()
      * 
-     * 
-     * 
+     * TODO: Add OVER_VIEW.. DECIMATION, .. READ_GRIDGEO is required I think
+     * parameters here should be passed as Hints? Add some PAIRS custom PARAMS and
+     * test
      */
     public PairsFormat() {
-        writeParameters = null;
         mInfo = new HashMap<String, String>();
         mInfo.put("name", COVERAGE_NAME);
-        mInfo.put("description", "Pairs HBase connection");
+        mInfo.put("description", "Live Pairs HBase data connection");
         mInfo.put("vendor", "IBM Pairs");
-        mInfo.put("version", "0.9");
+        mInfo.put("version", "0.9.1");
         mInfo.put("docURL", "http://www.ibmpairs.mybluemix.net");
 
-        /**
-         * 
-         * TODO: test, Norm added OVER_VIEW.. DECIMATION, .. READ_GRIDGEO is required I
-         * think
-         */
-        // reading parameters
-        readParameters = new ParameterGroup(
+        super.readParameters = new ParameterGroup(
                 new DefaultParameterDescriptorGroup(mInfo, new GeneralParameterDescriptor[] { READ_GRIDGEOMETRY2D,
                         INPUT_TRANSPARENT_COLOR, SUGGESTED_TILE_SIZE }));
 
@@ -93,7 +115,7 @@ public class PairsFormat extends AbstractGridFormat {
          * new DefaultParameterDescriptorGroup(mInfo, parameterDescriptors);
          * readParameters = new ParameterGroup(defaultParameterGroup);
          */
-        writeParameters = null;
+        super.writeParameters = null;
     }
 
     public boolean accepts(Object source) {
@@ -102,18 +124,11 @@ public class PairsFormat extends AbstractGridFormat {
     }
 
     /**
-     * @param source the source object to test for compatibility with this format.
+     * @param source - Object to test for compatibility with this format.
      */
     @Override
     public boolean accepts(Object source, Hints hints) {
-        boolean result = false;
-        if (source == null) {
-            result = false;
-        } else if (source instanceof String) {
-            String val = (String) source;
-            if (val.startsWith(PAIRS_SCHEME))
-                result = true;
-        }
+        boolean result = isValidSource(source, hints);
         return result;
     }
 
@@ -122,18 +137,84 @@ public class PairsFormat extends AbstractGridFormat {
         return getReader(source, null);
     }
 
-    /**
-     *
-     */
     @Override
     public PairsCoverageReader getReader(Object source, Hints hints) {
         PairsCoverageReader result = null;
-        LOGGER.log(Level.WARNING, "PairsExtension (geoserverlogger) Source: " + source.toString());
-        if (source instanceof String) {
+
+        if (isValidSource(source, hints)) {
             try {
                 result = new PairsCoverageReader(source, hints);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "PairsFormat::()getReader: " + e.getMessage());
+                LOGGER.log(Level.WARNING, "PairsFormat::getReader(): " + e.getMessage());
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Validate the source. Source is the URI from the connection field in the
+     * Create Data Store menu of the Geoserver UI. For a pairs coverage store it is
+     * either an http uri or a FILE. The http URL MUST be valid in the sense that an
+     * openConnection returns an input stream. (See geoserver class
+     * FileExistsValidator.java which validates the UI Form). For http scheme (e.g.
+     * http://www.ibm.com) we are passed the entire URI as a String Type (e.g.
+     * http://www.ibm.com). For source instanceOf Java File Type
+     * (file:///Users/bobroff/projects/pairs/data/pairspluginfile.tif) we are passed
+     * path of the file (/Users/bobroff/projects/pairs/data/pairspluginfile.ibmplugin),
+     * i.e. uri.getPath().
+     * 
+     * Validation on data source creation at the Geoserver UI is done by
+     * FileExistsValidator.java
+     * 
+     * // TODO enforce file extension match something like 'pairslayer'
+     * TODO: For proper validation we should open and read the file or URL for valid
+     * metadata.
+     * 
+     * @param source
+     * @param hints
+     * @return
+     */
+    public boolean isValidSource(Object source, Hints hints) {
+        boolean result = false;
+        LOGGER.log(Level.WARNING, "PairsFormat Source class: " + source.getClass().getName() + ", value: " + source);
+
+        if (source instanceof String) { // HTTP scheme comes in as a String type rather than URI
+            String urlPath = source.toString();
+            for (String sigUri : PAIRS_SIGNATURE) {
+                if (urlPath.toLowerCase().contains(sigUri)) {
+                    result = true;
+                    try {
+                        // URIBuilder builder = new URIBuilder(urlPath);
+                        // java.net.URI uri = builder.build();
+                        // URLConnection connection = uri.toURL().openConnection();
+                        // connection.setConnectTimeout(2000);
+                        // InputStream is = connection.getInputStream();
+
+                    } catch (Exception e) {
+                        result = true;
+                    }
+                }
+            }
+        } else if (source instanceof File) {
+            File file = (File) source;
+            if (!file.exists())
+                return false;
+
+            Path path = file.toPath().toAbsolutePath();
+            String fileName = path.toString();
+            String fileExt = "";
+            int fdot = fileName.lastIndexOf(".");
+
+            
+            if( fdot > -1 && fdot < 1 + fileName.length())
+                fileExt = fileName.substring(fdot + 1);
+            
+            for (String sigFile : PAIRS_SIGNATURE) {
+                if (fileName.toLowerCase().contains(sigFile)) {
+                    result = true;
+                    break;
+                }
             }
         }
         return result;
