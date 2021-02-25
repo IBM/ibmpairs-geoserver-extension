@@ -1,3 +1,5 @@
+# Automated Release 0.34.0
+* 7944d0f - Norm/pairsdatastore (#55)
 # Automated Release 0.33.0
 * 4846594 - Norm/dimensions (#54)
 # Automated Release 0.32.0
