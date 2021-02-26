@@ -86,7 +86,7 @@ import org.opengis.parameter.GeneralParameterDescriptor;
 public class PairsFormat extends AbstractGridFormat {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsFormat.class);
     public static final String COVERAGE_NAME = "IBMPairs (Pairs Raster)";
-    private static final String[] PAIRS_SIGNATURE = { "ibm", "pairs", "pairsplugin"};
+    private static final String[] PAIRS_SIGNATURE = { "ibm", "pairs", "pairsplugin" };
 
     /**
      * Creates a new instance of PairsFormat from call to
@@ -161,13 +161,15 @@ public class PairsFormat extends AbstractGridFormat {
      * http://www.ibm.com) we are passed the entire URI as a String Type (e.g.
      * http://www.ibm.com). For source instanceOf Java File Type
      * (file:///Users/bobroff/projects/pairs/data/pairspluginfile.tif) we are passed
-     * path of the file (/Users/bobroff/projects/pairs/data/pairspluginfile.ibmplugin),
-     * i.e. uri.getPath().
+     * path of the file
+     * (/Users/bobroff/projects/pairs/data/pairspluginfile.ibmplugin), i.e.
+     * uri.getPath().
      * 
      * Validation on data source creation at the Geoserver UI is done by
      * FileExistsValidator.java
      * 
-     * // TODO enforce file extension match something like 'pairslayer'
+     * TODO enforce file extension match something like 'pairslayer'
+     * 
      * TODO: For proper validation we should open and read the file or URL for valid
      * metadata.
      * 
@@ -183,16 +185,18 @@ public class PairsFormat extends AbstractGridFormat {
             String urlPath = source.toString();
             for (String sigUri : PAIRS_SIGNATURE) {
                 if (urlPath.toLowerCase().contains(sigUri)) {
-                    result = true;
                     try {
                         // URIBuilder builder = new URIBuilder(urlPath);
                         // java.net.URI uri = builder.build();
                         // URLConnection connection = uri.toURL().openConnection();
                         // connection.setConnectTimeout(2000);
                         // InputStream is = connection.getInputStream();
-
-                    } catch (Exception e) {
+                        // is.close();
+    
                         result = true;
+                        break;
+                    } catch (Exception e) {
+                        result = false;
                     }
                 }
             }
@@ -203,19 +207,21 @@ public class PairsFormat extends AbstractGridFormat {
 
             Path path = file.toPath().toAbsolutePath();
             String fileName = path.toString();
+
             String fileExt = "";
             int fdot = fileName.lastIndexOf(".");
-
-            
-            if( fdot > -1 && fdot < 1 + fileName.length())
+            if (fdot > -1 && fdot < 1 + fileName.length())
                 fileExt = fileName.substring(fdot + 1);
-            
+
             for (String sigFile : PAIRS_SIGNATURE) {
                 if (fileName.toLowerCase().contains(sigFile)) {
                     result = true;
                     break;
                 }
             }
+        } else {
+            result = false;
+            LOGGER.log(Level.SEVERE, "Unsupported data source protocol: " + source.getClass());
         }
         return result;
     }
