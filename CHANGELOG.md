@@ -1,3 +1,5 @@
+# Automated Release 0.35.0
+* 6a204b8 - set branch.name to empty in pom.xml
 # Automated Release 0.34.0
 * 7944d0f - Norm/pairsdatastore (#55)
 # Automated Release 0.33.0
