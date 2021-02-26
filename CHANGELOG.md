@@ -1,3 +1,5 @@
+# Automated Release 0.36.0
+* 14e583a - Norm/multilayer (#56)
 # Automated Release 0.35.0
 * 6a204b8 - set branch.name to empty in pom.xml
 # Automated Release 0.34.0
