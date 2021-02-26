@@ -7,7 +7,7 @@
         <java.version>1.8</java.version>
         <geoserver.version>2.16.2</geoserver.version>
         <jackson2.version>2.11.1</jackson2.version>
-        <branch.name>-datastore01</branch.name>
+        <branch.name></branch.name>
     </properties>
 
     <groupId>com.ibm.pa.pairs</groupId>
