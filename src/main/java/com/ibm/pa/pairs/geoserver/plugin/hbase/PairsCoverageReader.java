@@ -163,8 +163,9 @@ import org.opengis.referencing.ReferenceIdentifier;
  * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
  * needs more work to make Cropping work with CRS other than 4326.
  * 
- * I recently found some very useful static utilities in geotools Coveridge class to convert coverages
- * between CRS. So can try to covert 4326 to 3857 when we return it from read(..).
+ * I recently found some very useful static utilities in geotools Coveridge
+ * class to convert coverages between CRS. So can try to covert 4326 to 3857
+ * when we return it from read(..).
  * 
  * 
  * End Note regarding originalEnvelope and originalGridRange:
@@ -196,6 +197,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             originalEnvelope = getPairsOriginalEnvelope();
             originalGridRange = getPairsOriginalGridRange();
             setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
+            if (httpRequestParams.getCrs() != null)
+                crs = CRS.decode(httpRequestParams.getCrs());
         } else {
             originalEnvelope = getMyOriginalEnvelope(); // temporary fix
             originalGridRange = getMyOriginalGridRange(); // temporary fix
@@ -267,7 +270,24 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return PairsUtilities.getPairsResolution(layerId, statistic, imageDescriptor);
     }
 
+    GeneralEnvelope getMyOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
+        GeneralEnvelope result = null;
+        double minlon = -180, minlat = -90;
+        double maxlon = 180, maxlat = 90;
+        double[] minBB = new double[] { minlon, minlat }, maxBB = new double[] { maxlon, maxlat };
+        result = new GeneralEnvelope(minBB, maxBB);
+        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
+        // result.setCoordinateReferenceSystem(crs);
+        return result;
+    }
+
     /**
+     * see parent protected static final double[] getResolution( GeneralEnvelope
+     * envelope, Rectangle2D dim, CoordinateReferenceSystem crs) throws
+     * DataSourceException {
+     * 
+     * can we leverage here? or we really
+     * 
      * 
      * @return
      * @throws NoSuchAuthorityCodeException
@@ -286,8 +306,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         double[] nelonLat = { swLonLat[0] + lonSpan, swLonLat[1] + latSpan };
 
         result = new GeneralEnvelope(swLonLat, nelonLat);
-        // result.setCoordinateReferenceSystem(CRS.decode(httpRequestParams.getCrs()));
+        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
 
+        return result;
+    }
+
+    GridEnvelope getMyOriginalGridRange() {
+        GeneralGridEnvelope result = null;
+        result = new GeneralGridEnvelope(new int[] { 0, 0 }, new int[] { GRID_WIDTH, GRID_HEIGHT });
         return result;
     }
 
@@ -468,23 +494,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                     + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
         }
 
-        return result;
-    }
-
-    GeneralEnvelope getMyOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
-        GeneralEnvelope result = null;
-        double minlon = -180, minlat = -90;
-        double maxlon = 180, maxlat = 90;
-        double[] minBB = new double[] { minlon, minlat }, maxBB = new double[] { maxlon, maxlat };
-        result = new GeneralEnvelope(minBB, maxBB);
-        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
-        result.setCoordinateReferenceSystem(crs);
-        return result;
-    }
-
-    GridEnvelope getMyOriginalGridRange() {
-        GeneralGridEnvelope result = null;
-        result = new GeneralGridEnvelope(new int[] { 0, 0 }, new int[] { GRID_WIDTH, GRID_HEIGHT });
         return result;
     }
 

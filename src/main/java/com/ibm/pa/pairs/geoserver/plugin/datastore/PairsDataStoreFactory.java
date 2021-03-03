@@ -16,16 +16,16 @@
  */
 package com.ibm.pa.pairs.geoserver.plugin.datastore;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
+import org.geotools.util.KVP;
 
 /**
  * DataAccessFactory for working with formats based on a single URL.
@@ -38,19 +38,39 @@ import org.geotools.data.DataStoreFactorySpi;
  * @source $URL$
  */
 public class PairsDataStoreFactory implements DataStoreFactorySpi {
-    private final static Logger logger = org.geotools.util.logging.Logging.getLogger(PairsDataStoreFactory.class);
-    public static final Param PAIRS_DATASTORE_URL_PARAM = new Param("url", String.class, "unique id for pairs data store",
-            true, "http://pairs.ibm.com/datastore1");
+    private static final Logger logger = org.geotools.util.logging.Logging.getLogger(PairsDataStoreFactory.class);
+    public static final Param PAIRS_DATASTORE_URL_PARAM = new Param("url", String.class,
+            "unique id for pairs data store", true, "http://pairs.ibm.com/datastore1", new KVP(Param.EXT, "pairs"));
 
+    /**
+     * todo: This method needs work. Should use the Param above to verify the params
+     * passed in have a value we can process. Here we do quick look for "pairs" or
+     * "ibm" in String. Should add Param "namespace" in getInformation() and check
+     * for pairs namespace. Typically by setting breakpoint here I see params Map
+     * has namespace and url of protocol file or http as defined in the dialog box
+     * that creates this layer and that is what we should match on using
+     * PAIRS_DATASTORE.... param matching
+     */
     @Override
     public boolean canProcess(Map<String, Serializable> params) {
-        for(String key : params.keySet()) {
+        boolean result = false;
+        for (String key : params.keySet()) {
             Object value = params.get(key);
-            logger.info( "canProcess(): key: " + key + ", value: " + value);
+            logger.info("canProcess(): key: " + key + ", valueClass: " + value.getClass() + ", value: " + value);
+            if (value instanceof String) {
+                String s = ((String) value).toLowerCase();
+                if (s.contains("pairs") || s.contains("www.ibm"))
+                    return true;
+            }
+            if (value instanceof File) {
+                String s = ((File) value).getPath().toLowerCase();
+                if (s.contains("pairs") || s.contains("www.ibm"))
+                    return true;
+            }
         }
 
-        boolean chk = DataStoreFactorySpi.super.canProcess(params);
-        return chk;
+        // result = DataStoreFactorySpi.super.canProcess(params);
+        return result;
     }
 
     /**
