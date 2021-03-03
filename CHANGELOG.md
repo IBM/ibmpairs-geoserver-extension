@@ -1,3 +1,5 @@
+# Automated Release 0.37.0
+* 625221d - Norm/multilayer (#57)
 # Automated Release 0.36.0
 * 14e583a - Norm/multilayer (#56)
 # Automated Release 0.35.0
