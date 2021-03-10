@@ -66,3 +66,6 @@ public WCSEnvelope(CoordinateReferenceSystem crs) {
             throw new IllegalArgumentException(
                     "WCSEnvelope coordinate reference system cannot be null");
         }
+
+## Rendering transformations
+schema http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd

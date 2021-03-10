@@ -6,7 +6,7 @@
     xmlns:xlink="http://www.w3.org/1999/xlink"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <NamedLayer>
-        <Name>contour_dem</Name>
+        <Name>pairs:pairspluginlayer</Name>
         <UserStyle>
             <Title>Contour DEM</Title>
             <Abstract>Extracts contours from DEM</Abstract>
