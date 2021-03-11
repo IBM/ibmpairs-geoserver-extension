@@ -6,7 +6,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd" version="1.0.0">
     <NamedLayer>
-        <Name>Sentinel2 NDVI</Name>
+        <Name>pairs:pairspluginlayer</Name>
         <UserStyle>
             <Title>NDVI</Title>
             <FeatureTypeStyle>
