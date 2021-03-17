@@ -165,7 +165,8 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * I recently found some very useful static utilities in geotools Coveridge
  * class to convert coverages between CRS. So can try to covert 4326 to 3857
- * when we return it from read(..).
+ * when we return it from read(..). Specifically routines to map a coverage from one crs to another.
+ * Or, a planarimage using renderimageops.
  * 
  * 
  * End Note regarding originalEnvelope and originalGridRange:
@@ -253,7 +254,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     }
 
     /**
-     * Number of coverages for this reader is 1
+     * Number of coverages for this reader is 1.
+     * 
+     * For multi-layer request this will become the number parsed from the input parameters.
      *
      * @return the number of coverages for this reader.
      */
@@ -429,21 +432,24 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             return result;
         }
 
-        Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
-        double swlon = rectangle2D.getMinX();
-        double swlat = rectangle2D.getMinY();
-        double nelon = rectangle2D.getMaxX();
-        double nelat = rectangle2D.getMaxY();
-        boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
-        requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
-        /**
+         /**
          * TODO: An image descriptor is built inside PairsWMSQueryParams
          * (httpRequestParams) and should be same as the one in the local vars above.
          * This should be confirmed, and if so then use the one in PairsWMSQueryParams
          * and remove local var. Then, the line below should be: URI uri =
          * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
          */
+        
+        // Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
+        // double swlon = rectangle2D.getMinX();
+        // double swlat = rectangle2D.getMinY();
+        // double nelon = rectangle2D.getMaxX();
+        // double nelat = rectangle2D.getMaxY();
+        // boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
+        // requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
+       
         PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
+        requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
         logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
         logger.info("httpRequestParams Request ImageDescriptor: "
                 + pairsWMSQueryParams.getRequestImageDescriptor().toString());

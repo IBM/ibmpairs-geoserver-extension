@@ -166,7 +166,7 @@ public class PairsUtilities {
             throws ClientProtocolException, IOException, URISyntaxException {
 
         URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
-                + "dataquery/" + "layer/" + layerId + "/level");
+                + "dataquery/layer/" + layerId + "/level");
 
         builder.setParameter("width", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
