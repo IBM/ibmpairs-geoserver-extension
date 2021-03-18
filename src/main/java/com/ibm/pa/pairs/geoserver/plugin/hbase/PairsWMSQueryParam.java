@@ -11,7 +11,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsWMSQueryParam {
     static final Logger logger = Logger.getLogger(PairsWMSQueryParam.class.getName());
-    int layerid;
+    Integer layerid;
+    Integer layerid2;
     long timestamp;
     String statistic;
     int level = -1;
@@ -55,7 +56,11 @@ public class PairsWMSQueryParam {
         if (!invalidParams.isEmpty())
             throw new IllegalArgumentException(invalidParams.toString());
 
-        queryParams.setLayerid(Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
+        queryParams.layerid = (Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
+        if(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2) != null) {
+            queryParams.layerid2 = Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2));
+        }
+
         queryParams.setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
         queryParams.setStatistic(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
         queryParams.setCrs(kvp.get("CRS"));
@@ -105,12 +110,16 @@ public class PairsWMSQueryParam {
         this.statistic = statistic;
     }
 
-    public int getLayerid() {
+    public Integer getLayerid() {
         return this.layerid;
     }
 
-    public void setLayerid(int layerid) {
+    public void setLayerid(Integer layerid) {
         this.layerid = layerid;
+    }
+
+    public Integer getLayerid2() {
+        return this.layerid2;
     }
 
     public long getTimestamp() {

@@ -29,6 +29,7 @@ public class PairsGeoserverExtensionConfig {
     public static String PAIRS_HEADER_KEY = "ibmpairs";
     public static String PAIRS_QUERY_STRING_KEY_PREFIX = "ibmpairs";
     public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid";
+    public static String PAIRS_QUERY_KEY_LAYERID2 = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid2";
     public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_timestamp";
     public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_statistic";
     public static String PAIRS_QUERY_KEY_DIMENSION = PAIRS_QUERY_STRING_KEY_PREFIX + "_dimension";

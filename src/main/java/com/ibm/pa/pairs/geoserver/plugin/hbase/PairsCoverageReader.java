@@ -156,17 +156,19 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * HOWEVER, the problem arises when we try to do a WPS gs:CropCoverage operation
  * and the input layer is 3857. The originalEnvelope setting is now used
- * extensively in the Goetools code path. It works fine if the original
+ * extensively in the Geotools code path. It works fine if the original
  * GeneralEnvelope is in 4326, but when its in 3857 we fail. In
  * getPairsOriginalEnvelope() I've tried to set the CRS to the input 3857, but
  * that still causes errors, usually a WARN coordinates seem to exceed allowed
  * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
  * needs more work to make Cropping work with CRS other than 4326.
  * 
- * I recently found some very useful static utilities in geotools Coveridge
+ * I recently found some very useful static utilities in geotools Coverage
  * class to convert coverages between CRS. So can try to covert 4326 to 3857
  * when we return it from read(..). Specifically routines to map a coverage from one crs to another.
  * Or, a planarimage using renderimageops.
+ * 
+ * Also see AbstractGridCoverage2DReader.getResolution()
  * 
  * 
  * End Note regarding originalEnvelope and originalGridRange:
@@ -207,11 +209,16 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             // setlayout(new ImageLayout(0, 0, GRID_WIDTH, GRID_HEIGHT));
         }
 
-        coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
-        if (coverageFactory == null) {
-            logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
-            coverageFactory = new GridCoverageFactory();
-        }
+        /**
+         * CoverageFactory should be set in super constructor above super(input, uHints);
+         * 
+         * todo: remove commented code after testing
+         */
+        // coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
+        // if (coverageFactory == null) {
+        //     logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
+        //     coverageFactory = new GridCoverageFactory();
+        // }
     }
 
     /**
@@ -503,6 +510,10 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return result;
     }
 
+    public GridCoverageFactory getGridCoverageFactory() {
+        return super.coverageFactory;
+    }
+
     private BufferedImage getImage(ImageDescriptor imageDescriptor, float[] data, String method) {
         BufferedImage result = null;
 
@@ -657,6 +668,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 return false;
         }
     };
+
+
+
 
 }
 
