@@ -1,13 +1,19 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
-import java.awt.image.RenderedImage;
+import java.awt.Point;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.media.jai.DataBufferFloat;
 import javax.media.jai.PlanarImage;
+import javax.media.jai.RasterFactory;
+import javax.media.jai.TiledImage;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -19,31 +25,44 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.geometry.Envelope2D;
-import org.geotools.referencing.CRS;
 
-public class PairsQueryCoverageJob implements Callable<PairsQueryCoverageJob> {
+public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     private static final Logger logger = org.geotools.util.logging.Logging.getLogger(PairsQueryCoverageJob.class);
     PairsWMSQueryParam queryParams;
     PairsCoverageReader pairsCoverageReader;
+    GridCoverageFactory gridCoverageFactory;
+    String coverageName;
     Integer layerIndex = 0;
     ImageDescriptor responseImageDescriptor;
+    Envelope2D responseEnvelope2D;
+    float[] imageDataFloat;
     GridCoverage2D gridCoverage2D;
-    RenderedImage renderedImage;
     PlanarImage planarImage;
 
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader, int layerIndex) {
         this.queryParams = queryParams;
         this.pairsCoverageReader = coverageReader;
         this.layerIndex = layerIndex;
+
+        gridCoverageFactory = coverageReader.getGridCoverageFactory();
+        coverageName = pairsCoverageReader.getSource().toString();
+        responseEnvelope2D = new Envelope2D(pairsCoverageReader.getCoordinateReferenceSystem(),
+                responseImageDescriptor.getBoundingBox().getSwLonLat()[0],
+                responseImageDescriptor.getBoundingBox().getSwLonLat()[1],
+                responseImageDescriptor.getBoundingBox().getWidth(),
+                responseImageDescriptor.getBoundingBox().getHeight());
     }
 
     @Override
-    public PairsQueryCoverageJob call() throws Exception {
-        // TODO Auto-generated method stub
-        return null;
+    public GridCoverage2D call() throws Exception {
+        getDataFromPairsDataService();
+        gridCoverage2D = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
+        gridCoverage2D = buildGridCoverage2D();
+
+        return gridCoverage2D;
     }
 
     public void getDataFromPairsDataService() throws ClientProtocolException, URISyntaxException, IOException {
@@ -51,39 +70,54 @@ public class PairsQueryCoverageJob implements Callable<PairsQueryCoverageJob> {
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
-        ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
-                ImageDescriptor.class);
+        responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson, ImageDescriptor.class);
         logger.info("Response ImageDescriptor: " + responseImageDescriptor.toString());
 
         byte[] rawData = PairsUtilities.readRawContent(response);
-        float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
-
-        gridCoverage2D = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
+        imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
     }
 
+    /**
+     * This is the original, long-used method of PairsCoverageReader:read(...)
+     * 
+     * @param responseImageDescriptor
+     * @param imageVector
+     * @return
+     */
     private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
         GridCoverage2D result = null;
 
-        Envelope2D responseEnvelope = new Envelope2D(pairsCoverageReader.getCoordinateReferenceSystem(),
-                responseImageDescriptor.getBoundingBox().getSwLonLat()[0],
-                responseImageDescriptor.getBoundingBox().getSwLonLat()[1],
-                responseImageDescriptor.getBoundingBox().getWidth(),
-                responseImageDescriptor.getBoundingBox().getHeight());
-
-            float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
-            String coverageName = pairsCoverageReader.getSource().toString();
-            result = pairsCoverageReader.getGridCoverageFactory().create(coverageName, raster, responseEnvelope);
-        
-
+        float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
+        result = pairsCoverageReader.getGridCoverageFactory().create(coverageName, raster, responseEnvelope2D);
         return result;
     }
 
-    RenderedImage buildRenderedImage(ImageDescriptor responseImageDescriptor, float[] imageVector){
-        BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
-        result = coverageFactory.create(coverageName, image, responseEnvelope);
+    private Raster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
+        int width = responseImageDescriptor.getWidth();
+        int height = responseImageDescriptor.getHeight();
+        javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
 
+        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1);
 
-        return renderedImage;
+        java.awt.image.Raster raster = RasterFactory.createRaster(sampleModel, dataBuffer, new Point(0, 0));
+
+        return raster;
+    }
+
+    private TiledImage buildTiledImage(Raster raster) {
+        ColorModel colorModel = PlanarImage.createColorModel(raster.getSampleModel());
+        javax.media.jai.TiledImage tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0, 0,
+                raster.getSampleModel(), colorModel);
+        tiledImage.setData(raster);
+        return tiledImage;
+    }
+
+    private GridCoverage2D buildGridCoverage2D() {
+        Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
+        TiledImage tiledImage = buildTiledImage(raster);
+        GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
+
+        return result;
     }
 
     private HttpResponse getHttpResponseFromPairsDataService()
