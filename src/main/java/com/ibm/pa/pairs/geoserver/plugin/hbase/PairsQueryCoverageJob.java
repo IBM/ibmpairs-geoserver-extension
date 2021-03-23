@@ -49,18 +49,14 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
         gridCoverageFactory = coverageReader.getGridCoverageFactory();
         coverageName = pairsCoverageReader.getSource().toString();
-        responseEnvelope2D = new Envelope2D(pairsCoverageReader.getCoordinateReferenceSystem(),
-                responseImageDescriptor.getBoundingBox().getSwLonLat()[0],
-                responseImageDescriptor.getBoundingBox().getSwLonLat()[1],
-                responseImageDescriptor.getBoundingBox().getWidth(),
-                responseImageDescriptor.getBoundingBox().getHeight());
+
     }
 
     @Override
     public GridCoverage2D call() throws Exception {
         getDataFromPairsDataService();
         gridCoverage2D = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
-        gridCoverage2D = buildGridCoverage2D();
+        gridCoverage2D = buildGridCoverage2DNew();
 
         return gridCoverage2D;
     }
@@ -72,6 +68,12 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
         responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson, ImageDescriptor.class);
         logger.info("Response ImageDescriptor: " + responseImageDescriptor.toString());
+
+        responseEnvelope2D = new Envelope2D(pairsCoverageReader.getCoordinateReferenceSystem(),
+                responseImageDescriptor.getBoundingBox().getSwLonLat()[0],
+                responseImageDescriptor.getBoundingBox().getSwLonLat()[1],
+                responseImageDescriptor.getBoundingBox().getWidth(),
+                responseImageDescriptor.getBoundingBox().getHeight());
 
         byte[] rawData = PairsUtilities.readRawContent(response);
         imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
@@ -112,7 +114,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return tiledImage;
     }
 
-    private GridCoverage2D buildGridCoverage2D() {
+    private GridCoverage2D buildGridCoverage2DNew() {
         Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
         TiledImage tiledImage = buildTiledImage(raster);
         GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);

@@ -163,10 +163,10 @@ import org.opengis.referencing.ReferenceIdentifier;
  * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
  * needs more work to make Cropping work with CRS other than 4326.
  * 
- * I recently found some very useful static utilities in geotools Coverage
- * class to convert coverages between CRS. So can try to covert 4326 to 3857
- * when we return it from read(..). Specifically routines to map a coverage from one crs to another.
- * Or, a planarimage using renderimageops.
+ * I recently found some very useful static utilities in geotools Coverage class
+ * to convert coverages between CRS. So can try to covert 4326 to 3857 when we
+ * return it from read(..). Specifically routines to map a coverage from one crs
+ * to another. Or, a planarimage using renderimageops.
  * 
  * Also see AbstractGridCoverage2DReader.getResolution()
  * 
@@ -210,14 +210,16 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         }
 
         /**
-         * CoverageFactory should be set in super constructor above super(input, uHints);
+         * CoverageFactory should be set in super constructor above super(input,
+         * uHints);
          * 
          * todo: remove commented code after testing
          */
         // coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
         // if (coverageFactory == null) {
-        //     logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
-        //     coverageFactory = new GridCoverageFactory();
+        // logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for
+        // hints, creating new");
+        // coverageFactory = new GridCoverageFactory();
         // }
     }
 
@@ -263,7 +265,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     /**
      * Number of coverages for this reader is 1.
      * 
-     * For multi-layer request this will become the number parsed from the input parameters.
+     * For multi-layer request this will become the number parsed from the input
+     * parameters.
      *
      * @return the number of coverages for this reader.
      */
@@ -439,22 +442,23 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             return result;
         }
 
-         /**
+        /**
          * TODO: An image descriptor is built inside PairsWMSQueryParams
          * (httpRequestParams) and should be same as the one in the local vars above.
          * This should be confirmed, and if so then use the one in PairsWMSQueryParams
          * and remove local var. Then, the line below should be: URI uri =
          * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
          */
-        
+
         // Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
         // double swlon = rectangle2D.getMinX();
         // double swlat = rectangle2D.getMinY();
         // double nelon = rectangle2D.getMaxX();
         // double nelat = rectangle2D.getMaxY();
         // boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
-        // requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
-       
+        // requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height,
+        // dim.width);
+
         PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
         logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
@@ -462,22 +466,29 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 + pairsWMSQueryParams.getRequestImageDescriptor().toString());
 
         try {
-            HttpResponse response = PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams,
-                    requestImageDescriptor);
+            PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this, 0);
+            GridCoverage2D gridCoverage2D = pairsQueryCoverageJob.call();
+            result = gridCoverage2D;
 
-            String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
-                    PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
-            ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
-                    ImageDescriptor.class);
+            // HttpResponse response =
+            // PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams,
+            // requestImageDescriptor);
 
-            logger.info("Response ImageDescriptor: " + responseImageDescriptor.toString());
+            // String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
+            // PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
+            // ImageDescriptor responseImageDescriptor =
+            // PairsUtilities.deserializeJson(pairsHeaderJson,
+            // ImageDescriptor.class);
 
-            byte[] rawData = PairsUtilities.readRawContent(response);
-            float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
+            // logger.info("Response ImageDescriptor: " +
+            // responseImageDescriptor.toString());
 
-            result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
+            // byte[] rawData = PairsUtilities.readRawContent(response);
+            // float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
+
+            // result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage());
+            e.printStackTrace();
             throw new IOException(e.getMessage());
         }
 
@@ -494,49 +505,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 responseImageDescriptor.getBoundingBox().getWidth(),
                 responseImageDescriptor.getBoundingBox().getHeight());
 
-        if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
-                .equals(PairsGeoserverExtensionConfig.RASTER)) {
-            float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
-            result = coverageFactory.create(coverageName, raster, responseEnvelope);
-        } else if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
-                .equals(PairsGeoserverExtensionConfig.BUFFERED_IMAGE)) {
-            BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
-            result = coverageFactory.create(coverageName, image, responseEnvelope);
-        } else {
-            logger.log(Level.WARNING, "Unknown coverage generation type: "
-                    + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
-        }
+        float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
+        result = coverageFactory.create(coverageName, raster, responseEnvelope);
 
         return result;
     }
 
     public GridCoverageFactory getGridCoverageFactory() {
         return super.coverageFactory;
-    }
-
-    private BufferedImage getImage(ImageDescriptor imageDescriptor, float[] data, String method) {
-        BufferedImage result = null;
-
-        switch (method) {
-            case "getGrayImageFromIntData":
-                int[] intData = PairsUtilities.floatArray2ScaledIntArray(data);
-                result = getGrayImageFromIntData(imageDescriptor, intData);
-                break;
-
-            case "default":
-            case "getGrayImageFromFloatData":
-                result = getGrayImageFromFloatData(imageDescriptor, data);
-                break;
-
-            case "getRGBImageFromFloatData":
-                result = getRGBImageFromFloatData(imageDescriptor, data);
-                break;
-
-            default:
-                throw new IllegalArgumentException("Invalid image create method: " + method);
-        }
-
-        return result;
     }
 
     private BufferedImage getGrayImageFromIntData(ImageDescriptor imageDescriptor, int[] data) {
@@ -668,9 +644,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 return false;
         }
     };
-
-
-
 
 }
 
