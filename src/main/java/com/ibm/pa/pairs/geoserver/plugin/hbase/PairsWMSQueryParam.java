@@ -114,10 +114,6 @@ public class PairsWMSQueryParam {
         return this.layerid;
     }
 
-    public void setLayerid(Integer layerid) {
-        this.layerid = layerid;
-    }
-
     public Integer getLayerid2() {
         return this.layerid2;
     }

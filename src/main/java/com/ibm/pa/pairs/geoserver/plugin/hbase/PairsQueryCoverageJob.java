@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
+import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -35,34 +36,45 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     PairsCoverageReader pairsCoverageReader;
     GridCoverageFactory gridCoverageFactory;
     String coverageName;
-    Integer layerIndex = 0;
     ImageDescriptor responseImageDescriptor;
     Envelope2D responseEnvelope2D;
     float[] imageDataFloat;
     GridCoverage2D gridCoverage2D;
-    PlanarImage planarImage;
+    RenderedImage planarImage;
 
-    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader, int layerIndex) {
+    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader) {
         this.queryParams = queryParams;
         this.pairsCoverageReader = coverageReader;
-        this.layerIndex = layerIndex;
 
         gridCoverageFactory = coverageReader.getGridCoverageFactory();
         coverageName = pairsCoverageReader.getSource().toString();
-
     }
 
     @Override
     public GridCoverage2D call() throws Exception {
-        getDataFromPairsDataService();
-        gridCoverage2D = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
-        gridCoverage2D = buildGridCoverage2DNew();
+        Integer layerId = queryParams.getLayerid();
+        getDataFromPairsDataService(layerId);
+        gridCoverage2D = buildGridCoverage2D();
+        planarImage = gridCoverage2D.getRenderedImage();
+
+        /**
+         * TODO finish this section by merging the bands from the images into a multi
+         * band coverage. I don't think below is correct. Also, need to return correct result in PairsCoverageReader.getBandCount()
+         */
+        if (queryParams.getLayerid2() != null) {
+            layerId = queryParams.getLayerid2();
+            getDataFromPairsDataService(layerId);
+            Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
+            TiledImage tiledImage = buildTiledImage(raster);
+            tiledImage.addSink(planarImage);
+            GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
+        }
 
         return gridCoverage2D;
     }
 
-    public void getDataFromPairsDataService() throws ClientProtocolException, URISyntaxException, IOException {
-        HttpResponse response = getHttpResponseFromPairsDataService();
+    public void getDataFromPairsDataService(Integer layerId) throws ClientProtocolException, URISyntaxException, IOException {
+        HttpResponse response = getHttpResponseFromPairsDataService(layerId);
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
@@ -79,28 +91,12 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
     }
 
-    /**
-     * This is the original, long-used method of PairsCoverageReader:read(...)
-     * 
-     * @param responseImageDescriptor
-     * @param imageVector
-     * @return
-     */
-    private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
-        GridCoverage2D result = null;
-
-        float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
-        result = pairsCoverageReader.getGridCoverageFactory().create(coverageName, raster, responseEnvelope2D);
-        return result;
-    }
-
     private Raster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
         int width = responseImageDescriptor.getWidth();
         int height = responseImageDescriptor.getHeight();
         javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
 
         SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1);
-
         java.awt.image.Raster raster = RasterFactory.createRaster(sampleModel, dataBuffer, new Point(0, 0));
 
         return raster;
@@ -114,7 +110,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return tiledImage;
     }
 
-    private GridCoverage2D buildGridCoverage2DNew() {
+    private GridCoverage2D buildGridCoverage2D() {
         Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
         TiledImage tiledImage = buildTiledImage(raster);
         GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
@@ -122,12 +118,10 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return result;
     }
 
-    private HttpResponse getHttpResponseFromPairsDataService()
+    private HttpResponse getHttpResponseFromPairsDataService(Integer layerId)
             throws URISyntaxException, ClientProtocolException, IOException {
         ImageDescriptor imageDescriptor = queryParams.getRequestImageDescriptor();
         HttpResponse response = null;
-
-        int layerId = layerIndex == 0 ? queryParams.getLayerid() : queryParams.getLayerid2();
 
         URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
                 + "dataquery/" + "layer/" + layerId + "/raster");
@@ -160,5 +154,23 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         response = httpClient.execute(request);
 
         return response;
+    }
+
+    /**
+     * Deprecated. Use buildGridCoverage2D() instead which creates a PlanarImage
+     * that can accept additional sources (databands)
+     * 
+     * This is the original, long-used method of PairsCoverageReader:read(...)
+     * 
+     * @param responseImageDescriptor
+     * @param imageVector
+     * @return
+     */
+    private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
+        GridCoverage2D result = null;
+
+        float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
+        result = pairsCoverageReader.getGridCoverageFactory().create(coverageName, raster, responseEnvelope2D);
+        return result;
     }
 }

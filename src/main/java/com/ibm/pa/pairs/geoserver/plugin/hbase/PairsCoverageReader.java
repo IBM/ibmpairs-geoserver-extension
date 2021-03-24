@@ -350,7 +350,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
      */
     @Override
     public GridCoverage2D read(GeneralParameterValue[] params) throws IOException {
-        GridCoverage2D result = null;
+        GridCoverage2D gridCoverage2D = null;
         GeneralEnvelope requestedEnvelope = null;
         Rectangle dim = null;
         Color inputTransparentColor = null;
@@ -438,26 +438,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             boundingBox = new BoundingBox(-10, -10, 10, 10);
             requestImageDescriptor = new ImageDescriptor(boundingBox, 5, 5);
             float[] mockupImage = new float[requestImageDescriptor.height * requestImageDescriptor.width];
-            result = buildGridCoverage2D(requestImageDescriptor, mockupImage);
-            return result;
+            gridCoverage2D = buildGridCoverage2D(requestImageDescriptor, mockupImage);
+            return gridCoverage2D;
         }
-
-        /**
-         * TODO: An image descriptor is built inside PairsWMSQueryParams
-         * (httpRequestParams) and should be same as the one in the local vars above.
-         * This should be confirmed, and if so then use the one in PairsWMSQueryParams
-         * and remove local var. Then, the line below should be: URI uri =
-         * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
-         */
-
-        // Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
-        // double swlon = rectangle2D.getMinX();
-        // double swlat = rectangle2D.getMinY();
-        // double nelon = rectangle2D.getMaxX();
-        // double nelat = rectangle2D.getMaxY();
-        // boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
-        // requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height,
-        // dim.width);
 
         PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
@@ -466,34 +449,15 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 + pairsWMSQueryParams.getRequestImageDescriptor().toString());
 
         try {
-            PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this, 0);
-            GridCoverage2D gridCoverage2D = pairsQueryCoverageJob.call();
-            result = gridCoverage2D;
-
-            // HttpResponse response =
-            // PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams,
-            // requestImageDescriptor);
-
-            // String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
-            // PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
-            // ImageDescriptor responseImageDescriptor =
-            // PairsUtilities.deserializeJson(pairsHeaderJson,
-            // ImageDescriptor.class);
-
-            // logger.info("Response ImageDescriptor: " +
-            // responseImageDescriptor.toString());
-
-            // byte[] rawData = PairsUtilities.readRawContent(response);
-            // float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
-
-            // result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
+            PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this);
+            gridCoverage2D = pairsQueryCoverageJob.call();
         } catch (Exception e) {
             e.printStackTrace();
             throw new IOException(e.getMessage());
         }
 
         setPairsWMSHttpResponse();
-        return result;
+        return gridCoverage2D;
     }
 
     private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
@@ -513,63 +477,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
 
     public GridCoverageFactory getGridCoverageFactory() {
         return super.coverageFactory;
-    }
-
-    private BufferedImage getGrayImageFromIntData(ImageDescriptor imageDescriptor, int[] data) {
-        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        int[] nBits = { 8 };
-        ColorModel cm = new ComponentColorModel(cs, nBits, false, true, Transparency.OPAQUE, DataBuffer.TYPE_INT);
-        SampleModel sm = cm.createCompatibleSampleModel(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        DataBufferInt db = new DataBufferInt(data, imageDescriptor.getWidth() * imageDescriptor.getHeight());
-        WritableRaster raster = Raster.createWritableRaster(sm, db, null);
-        BufferedImage image = new BufferedImage(cm, raster, false, null);
-
-        return image;
-    }
-
-    /**
-     * Similar to getImageGray_BYTE, but uses float raster directly, needs test
-     */
-    private BufferedImage getGrayImageFromFloatData(ImageDescriptor imageDescriptor, float[] data) {
-        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        int[] nBits = { 8 };
-        ColorModel cm = new ComponentColorModel(cs, nBits, false, true, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
-        SampleModel sm = cm.createCompatibleSampleModel(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        DataBufferFloat db = new DataBufferFloat(data, imageDescriptor.getWidth() * imageDescriptor.getHeight());
-        WritableRaster raster = Raster.createWritableRaster(sm, db, null);
-        BufferedImage image = new BufferedImage(cm, raster, false, null);
-
-        return image;
-    }
-
-    private BufferedImage getRGBImageFromFloatData(ImageDescriptor imageDescriptor, float[] data) {
-        BufferedImage image = new BufferedImage(imageDescriptor.getWidth(), imageDescriptor.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
-        WritableRaster r = image.getRaster();
-        r.setPixels(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), data);
-        return image;
-    }
-
-    /**
-     * urlstr =
-     * "http://pairs-web04:9082/api/v2/data?layerid=PairsUtilities.TEST_LAYERID&timestamp=PairsUtilities.TEST_TIMESTAMP&swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256";
-     */
-    private BufferedImage getImageRGB1(ImageDescriptor imageDescriptor, float[] data) {
-        BufferedImage result = new BufferedImage(imageDescriptor.getWidth(), imageDescriptor.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
-
-        int[] imageDataInt = PairsUtilities.floatArray2IntArray(data);
-        WritableRaster writeableRaster = result.getRaster();
-        writeableRaster.setDataElements(0, 0, result.getWidth(), result.getHeight(), imageDataInt);
-
-        try {
-            result.setRGB(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), imageDataInt, 0,
-                    imageDescriptor.getWidth());
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error getting image: " + e.getMessage());
-            result = PairsUtilities.getTestImageIntRGB(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        }
-        return result;
     }
 
     /**
