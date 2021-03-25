@@ -131,7 +131,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
             Boolean dataBufferOnly) {
         this.queryParams = queryParams;
         this.pairsCoverageReader = coverageReader;
-        this.layerId = (layerId != null) ? queryParams.getLayerid() : layerId;
+        this.layerId = (layerId == null) ? queryParams.getLayerid() : layerId;
         this.dataBufferOnly = (dataBufferOnly == null) ? false : dataBufferOnly;
 
         gridCoverageFactory = coverageReader.getGridCoverageFactory();
