@@ -60,28 +60,81 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     private static final Logger logger = org.geotools.util.logging.Logging.getLogger(PairsQueryCoverageJob.class);
     PairsWMSQueryParam queryParams;
     PairsCoverageReader pairsCoverageReader;
-    GridCoverageFactory gridCoverageFactory;
     String coverageName;
+    GridCoverageFactory gridCoverageFactory;
+    Integer layerId;
+    Boolean dataBufferOnly = false;
     ImageDescriptor responseImageDescriptor;
     Envelope2D responseEnvelope2D;
     float[] imageDataFloat;
-    GridCoverage2D gridCoverage2D;
-    RenderedImage planarImage;
     Raster raster;
+    TiledImage tiledImage;
+    GridCoverage2D gridCoverage2D;
 
     /**
-     * placeholder for method to generate GridCoverage2D for multiple layers in the
-     * queryParams, aggregate into a sinngle multiband coverage and return to
-     * caller. When fleshed out will add constructor for PairsQueryCoverageJob that
-     * takes the layerID
+     * Convenience method for getting a GridCoverage2D
+     * 
+     * @param queryParams
+     * @param coverageReader
+     * @return
+     * @throws Exception
      */
-    public static void PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader) {
+    public static PairsQueryCoverageJob buildGridCoverage2D(PairsWMSQueryParam queryParams,
+            PairsCoverageReader coverageReader) throws Exception {
+        PairsQueryCoverageJob result = null;
 
+        if (queryParams.getLayerid2() == null) {
+            result = new PairsQueryCoverageJob(queryParams, coverageReader, queryParams.getLayerid(), false);
+            result.call();
+            return result;
+        }
+
+        PairsQueryCoverageJob pairsQueryCoverageJob1 = new PairsQueryCoverageJob(queryParams, coverageReader,
+                queryParams.getLayerid(), true);
+        pairsQueryCoverageJob1.call();
+        PairsQueryCoverageJob pairsQueryCoverageJob2 = new PairsQueryCoverageJob(queryParams, coverageReader,
+                queryParams.getLayerid2(), true);
+        pairsQueryCoverageJob2.call();
+
+        int width = pairsQueryCoverageJob1.getResponseImageDescriptor().getWidth();
+        int height = pairsQueryCoverageJob1.getResponseImageDescriptor().getHeight();
+        float[][] imageData = { pairsQueryCoverageJob1.getImageDataFloat(),
+                pairsQueryCoverageJob2.getImageDataFloat() };
+
+        javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
+        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 2);
+        java.awt.image.Raster raster = RasterFactory.createRaster(sampleModel, dataBuffer, new Point(0, 0));
+
+        javax.media.jai.TiledImage tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0, 0,
+                raster.getSampleModel(), null);
+        tiledImage.setData(raster);
+        GridCoverage2D gridCoverage2D = pairsQueryCoverageJob1.getGridCoverageFactory().create(pairsQueryCoverageJob1.getCoverageName(),
+                tiledImage, pairsQueryCoverageJob1.getResponseEnvelope2D());
+
+        result = new PairsQueryCoverageJob(queryParams, coverageReader);
+        result.setResponseImageDescriptor(pairsQueryCoverageJob1.getResponseImageDescriptor());
+        result.setResponseEnvelope2D(pairsQueryCoverageJob1.getResponseEnvelope2D());
+        result.setRaster(raster);
+        result.setTiledImage(tiledImage);
+        result.setGridCoverage2D(gridCoverage2D);
+
+        return result;
     }
 
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader) {
+        this(queryParams, coverageReader, null, null);
+    }
+
+    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader, Integer layerId) {
+        this(queryParams, coverageReader, layerId, null);
+    }
+
+    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader, Integer layerId,
+            Boolean dataBufferOnly) {
         this.queryParams = queryParams;
         this.pairsCoverageReader = coverageReader;
+        this.layerId = (layerId != null) ? queryParams.getLayerid() : layerId;
+        this.dataBufferOnly = (dataBufferOnly == null) ? false : dataBufferOnly;
 
         gridCoverageFactory = coverageReader.getGridCoverageFactory();
         coverageName = pairsCoverageReader.getSource().toString();
@@ -89,26 +142,13 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
     @Override
     public GridCoverage2D call() throws Exception {
-        Integer layerId = queryParams.getLayerid();
         getDataFromPairsDataService(layerId);
-        gridCoverage2D = buildGridCoverage2D();
-        planarImage = gridCoverage2D.getRenderedImage();
-    
-        buildGridCoverage2D_2();
+        if (dataBufferOnly)
+            return null;
 
-        /**
-         * TODO finish this section by merging the bands from the images into a multi
-         * band coverage. I don't think below is correct. Also, need to return correct
-         * result in PairsCoverageReader.getBandCount()
-         */
-        if (queryParams.getLayerid2() != null) {
-            layerId = queryParams.getLayerid2();
-            getDataFromPairsDataService(layerId);
-            Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
-            TiledImage tiledImage = buildTiledImage(raster);
-
-            GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
-        }
+        raster = buildRaster(responseImageDescriptor, imageDataFloat);
+        tiledImage = buildTiledImage(raster);
+        gridCoverage2D = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
 
         return gridCoverage2D;
     }
@@ -151,15 +191,11 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return tiledImage;
     }
 
-    private GridCoverage2D buildGridCoverage2D() {
-        Raster raster = buildRaster(responseImageDescriptor, imageDataFloat);
-        TiledImage tiledImage = buildTiledImage(raster);
-        GridCoverage2D result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
-
-        this.raster = raster;
-        return result;
-    }
-
+    /**
+     * Method for testing out building multiband coverage
+     * 
+     * @return
+     */
     private GridCoverage2D buildGridCoverage2D_2() {
         int width = responseImageDescriptor.getWidth();
         int height = responseImageDescriptor.getHeight();
@@ -176,21 +212,24 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
 
         // method2
-        // java.awt.image.WritableRaster writableRaster = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width,
-        //         height, 2, null);
+        // java.awt.image.WritableRaster writableRaster =
+        // RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width,
+        // height, 2, null);
         // float[] f = new float[writableRaster.getNumBands()];
         // for (int i = 0; i < width; i++) {
-        //     for (int j = 0; j < height; j++) {
-        //         f[0] = imageData[0][j + height * i];
-        //         f[1] = imageData[1][j + height * i];
-        //         writableRaster.setPixel(i, j, f);
-        //     }
+        // for (int j = 0; j < height; j++) {
+        // f[0] = imageData[0][j + height * i];
+        // f[1] = imageData[1][j + height * i];
+        // writableRaster.setPixel(i, j, f);
+        // }
         // }
 
         // // writableRaster.setDataElements(0, 0, width, height, dataBuffer);
-        // tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0, 0, raster.getSampleModel(), null);
+        // tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0,
+        // 0, raster.getSampleModel(), null);
         // tiledImage.setData(raster);
-        // result = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
+        // result = gridCoverageFactory.create(coverageName, tiledImage,
+        // responseEnvelope2D);
 
         return result;
     }
@@ -249,5 +288,77 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
         result = pairsCoverageReader.getGridCoverageFactory().create(coverageName, raster, responseEnvelope2D);
         return result;
+    }
+
+    public Integer getLayerId() {
+        return layerId;
+    }
+
+    public void setLayerId(Integer layerId) {
+        this.layerId = layerId;
+    }
+
+    public Boolean getDataBufferOnly() {
+        return dataBufferOnly;
+    }
+
+    public void setDataBufferOnly(Boolean dataBufferOnly) {
+        this.dataBufferOnly = dataBufferOnly;
+    }
+
+    public ImageDescriptor getResponseImageDescriptor() {
+        return responseImageDescriptor;
+    }
+
+    public void setResponseImageDescriptor(ImageDescriptor responseImageDescriptor) {
+        this.responseImageDescriptor = responseImageDescriptor;
+    }
+
+    public Envelope2D getResponseEnvelope2D() {
+        return responseEnvelope2D;
+    }
+
+    public void setResponseEnvelope2D(Envelope2D responseEnvelope2D) {
+        this.responseEnvelope2D = responseEnvelope2D;
+    }
+
+    public float[] getImageDataFloat() {
+        return imageDataFloat;
+    }
+
+    public void setImageDataFloat(float[] imageDataFloat) {
+        this.imageDataFloat = imageDataFloat;
+    }
+
+    public Raster getRaster() {
+        return raster;
+    }
+
+    public void setRaster(Raster raster) {
+        this.raster = raster;
+    }
+
+    public TiledImage getTiledImage() {
+        return tiledImage;
+    }
+
+    public void setTiledImage(TiledImage tiledImage) {
+        this.tiledImage = tiledImage;
+    }
+
+    public GridCoverage2D getGridCoverage2D() {
+        return gridCoverage2D;
+    }
+
+    public String getCoverageName() {
+        return coverageName;
+    }
+
+    public GridCoverageFactory getGridCoverageFactory() {
+        return gridCoverageFactory;
+    }
+
+    public void setGridCoverage2D(GridCoverage2D gridCoverage2D) {
+        this.gridCoverage2D = gridCoverage2D;
     }
 }

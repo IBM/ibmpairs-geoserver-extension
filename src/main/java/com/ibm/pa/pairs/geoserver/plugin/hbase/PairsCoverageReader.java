@@ -444,13 +444,13 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
 
         PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
         requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
-        logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
-        logger.info("httpRequestParams Request ImageDescriptor: "
-                + pairsWMSQueryParams.getRequestImageDescriptor().toString());
+        logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this);
-            gridCoverage2D = pairsQueryCoverageJob.call();
+            PairsQueryCoverageJob pairsQueryCoverageJob = PairsQueryCoverageJob.buildGridCoverage2D(pairsWMSQueryParams, this);
+            gridCoverage2D = pairsQueryCoverageJob.getGridCoverage2D();
+            // PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this);            
+            // gridCoverage2D = pairsQueryCoverageJob.call();
         } catch (Exception e) {
             e.printStackTrace();
             throw new IOException(e.getMessage());
@@ -499,59 +499,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         }
     }
 
-    /**
-     * Crop and resample to requested NOTE; The input image is shallow copy and
-     * return so note that any changes to result pixels will reflect in original
-     * 
-     * @param img
-     * @param src
-     * @param tgt
-     * @return
-     */
-    private BufferedImage cropImage(BufferedImage img, ImageDescriptor src, ImageDescriptor tgt) {
-        double degreeToPixelX = src.getBoundingBox().getWidth() / src.getWidth(); // X,Y should be ==
-        double degreeToPixelY = src.getBoundingBox().getHeight() / src.getHeight();
-        double degreeToPixel = degreeToPixelX;
-
-        int offsetX = (int) Math
-                .round((tgt.getBoundingBox().getSwLonLat()[0] - src.getBoundingBox().getSwLonLat()[0]) / degreeToPixel);
-        int offsetY = (int) Math
-                .round((tgt.getBoundingBox().getSwLonLat()[1] - src.getBoundingBox().getSwLonLat()[1]) / degreeToPixel);
-        int width = (int) Math.round(src.getBoundingBox().getWidth() / degreeToPixel);
-        int height = (int) Math.round(src.getBoundingBox().getHeight() / degreeToPixel);
-
-        BufferedImage dest = img.getSubimage(offsetX, offsetY, width, height);
-        return dest;
-    }
-
-    /**
-     * see https://memorynotfound.com/java-resize-image-fixed-width-height-example/
-     * Add imageObserver to drawImage(...) call if want to wait in loop after
-     * drawImage() call until image drawn, this probably not required, async
-     * rendering OK
-     */
-    private BufferedImage resizeImage(BufferedImage img, ImageDescriptor tgt) {
-        ImageObserver imageObserver = null;
-
-        Image rescaled = img.getScaledInstance(tgt.getWidth(), tgt.getHeight(), Image.SCALE_SMOOTH);
-        BufferedImage resized = new BufferedImage(tgt.getWidth(), tgt.getHeight(), img.getType());
-        resized.getGraphics().drawImage(rescaled, 0, 0, imageObserver);
-        resized.getGraphics().dispose();
-        return resized;
-    }
-
-    /**
-     * Use in above to make resizeImage() synchronous, not tested
-     */
-    ImageObserver imageObserver = new ImageObserver() {
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-            if ((infoflags & ImageObserver.ALLBITS) != ALLBITS)
-                return true;
-            else
-                return false;
-        }
-    };
-
 }
 
 /**
@@ -566,4 +513,41 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
  * 
  * image = resizeImage(image, requestImageDescriptor); image = cropImage(image,
  * responseImageDescriptor, requestImageDescriptor);
+ * 
+ * 
+ * /** Crop and resample to requested NOTE; The input image is shallow copy and
+ * return so note that any changes to result pixels will reflect in original
+ * 
+ * @param img
+ * @param src
+ * @param tgt
+ * @return
+ * 
+ *         private BufferedImage cropImage(BufferedImage img, ImageDescriptor
+ *         src, ImageDescriptor tgt) { double degreeToPixelX =
+ *         src.getBoundingBox().getWidth() / src.getWidth(); // X,Y should be ==
+ *         double degreeToPixelY = src.getBoundingBox().getHeight() /
+ *         src.getHeight(); double degreeToPixel = degreeToPixelX;
+ * 
+ *         int offsetX = (int) Math
+ *         .round((tgt.getBoundingBox().getSwLonLat()[0] -
+ *         src.getBoundingBox().getSwLonLat()[0]) / degreeToPixel); int offsetY
+ *         = (int) Math .round((tgt.getBoundingBox().getSwLonLat()[1] -
+ *         src.getBoundingBox().getSwLonLat()[1]) / degreeToPixel); int width =
+ *         (int) Math.round(src.getBoundingBox().getWidth() / degreeToPixel);
+ *         int height = (int) Math.round(src.getBoundingBox().getHeight() /
+ *         degreeToPixel);
+ * 
+ *         BufferedImage dest = img.getSubimage(offsetX, offsetY, width,
+ *         height); return dest; }
+ * 
+ * 
+ *         private BufferedImage resizeImage(BufferedImage img, ImageDescriptor
+ *         tgt) { ImageObserver imageObserver = null;
+ * 
+ *         Image rescaled = img.getScaledInstance(tgt.getWidth(),
+ *         tgt.getHeight(), Image.SCALE_SMOOTH); BufferedImage resized = new
+ *         BufferedImage(tgt.getWidth(), tgt.getHeight(), img.getType());
+ *         resized.getGraphics().drawImage(rescaled, 0, 0, imageObserver);
+ *         resized.getGraphics().dispose(); return resized; }
  */
