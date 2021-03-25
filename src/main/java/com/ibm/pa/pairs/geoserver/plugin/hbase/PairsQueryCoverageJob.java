@@ -3,9 +3,9 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 import java.awt.Point;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.Raster;
-import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.Callable;
@@ -67,7 +67,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     ImageDescriptor responseImageDescriptor;
     Envelope2D responseEnvelope2D;
     float[] imageDataFloat;
-    Raster raster;
+    WritableRaster writableRaster;
     TiledImage tiledImage;
     GridCoverage2D gridCoverage2D;
 
@@ -103,19 +103,17 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
         javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
         SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 2);
-        java.awt.image.Raster raster = RasterFactory.createRaster(sampleModel, dataBuffer, new Point(0, 0));
+        java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
+                new Point(0, 0));
 
-        javax.media.jai.TiledImage tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0, 0,
-                raster.getSampleModel(), null);
-        tiledImage.setData(raster);
-        GridCoverage2D gridCoverage2D = pairsQueryCoverageJob1.getGridCoverageFactory().create(pairsQueryCoverageJob1.getCoverageName(),
-                tiledImage, pairsQueryCoverageJob1.getResponseEnvelope2D());
+        GridCoverage2D gridCoverage2D = pairsQueryCoverageJob1.getGridCoverageFactory().create(
+                pairsQueryCoverageJob1.getCoverageName(), writableRaster,
+                pairsQueryCoverageJob1.getResponseEnvelope2D());
 
         result = new PairsQueryCoverageJob(queryParams, coverageReader);
         result.setResponseImageDescriptor(pairsQueryCoverageJob1.getResponseImageDescriptor());
         result.setResponseEnvelope2D(pairsQueryCoverageJob1.getResponseEnvelope2D());
-        result.setRaster(raster);
-        result.setTiledImage(tiledImage);
+        result.setWritableRaster(writableRaster);
         result.setGridCoverage2D(gridCoverage2D);
 
         return result;
@@ -146,9 +144,8 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         if (dataBufferOnly)
             return null;
 
-        raster = buildRaster(responseImageDescriptor, imageDataFloat);
-        tiledImage = buildTiledImage(raster);
-        gridCoverage2D = gridCoverageFactory.create(coverageName, tiledImage, responseEnvelope2D);
+        writableRaster = buildRaster(responseImageDescriptor, imageDataFloat);
+        gridCoverage2D = gridCoverageFactory.create(coverageName, writableRaster, responseEnvelope2D);
 
         return gridCoverage2D;
     }
@@ -172,15 +169,16 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
     }
 
-    private Raster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
+    private WritableRaster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
         int width = responseImageDescriptor.getWidth();
         int height = responseImageDescriptor.getHeight();
         javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
 
         SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1);
-        java.awt.image.Raster raster = RasterFactory.createRaster(sampleModel, dataBuffer, new Point(0, 0));
+        java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
+                new Point(0, 0));
 
-        return raster;
+        return writableRaster;
     }
 
     private TiledImage buildTiledImage(Raster raster) {
@@ -330,12 +328,12 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         this.imageDataFloat = imageDataFloat;
     }
 
-    public Raster getRaster() {
-        return raster;
+    public WritableRaster getWritableRaster() {
+        return writableRaster;
     }
 
-    public void setRaster(Raster raster) {
-        this.raster = raster;
+    public void setWritableRaster(WritableRaster raster) {
+        this.writableRaster = raster;
     }
 
     public TiledImage getTiledImage() {
