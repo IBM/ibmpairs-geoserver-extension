@@ -12,7 +12,7 @@
 
     <groupId>com.ibm.pa.pairs</groupId>
     <artifactId>pairs-geoserver-extension</artifactId>
-    <version>0.37.0</version>
+    <version>0.38.0</version>
     <packaging>jar</packaging>
 
     <name>pairs-geoserver-extension</name>
@@ -52,6 +52,14 @@
                         <descriptor>src/assembly/dist.xml</descriptor>
                     </descriptors>
                 </configuration>
+                <executions>
+                  <execution>
+                    <phase>package</phase>
+                    <goals>
+                      <goal>single</goal>
+                    </goals>
+                  </execution>
+                </executions>
             </plugin>
         </plugins>
 
