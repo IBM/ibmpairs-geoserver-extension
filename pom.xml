@@ -52,6 +52,14 @@
                         <descriptor>src/assembly/dist.xml</descriptor>
                     </descriptors>
                 </configuration>
+                <executions>
+                  <execution>
+                    <phase>package</phase>
+                    <goals>
+                      <goal>single</goal>
+                    </goals>
+                  </execution>
+                </executions>
             </plugin>
         </plugins>
 
