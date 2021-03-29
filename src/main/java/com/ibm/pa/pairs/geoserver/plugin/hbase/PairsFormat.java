@@ -86,7 +86,7 @@ import org.opengis.parameter.GeneralParameterDescriptor;
 public class PairsFormat extends AbstractGridFormat {
     private static final Logger LOGGER = org.geotools.util.logging.Logging.getLogger(PairsFormat.class);
     public static final String COVERAGE_NAME = "IBMPairs (Pairs Raster)";
-    private static final String[] PAIRS_SIGNATURE = { "ibm", "pairs", "pairsplugin" };
+    private static final String[] PAIRS_SIGNATURE = { "ibm", "pairs"};
 
     /**
      * Creates a new instance of PairsFormat from call to
@@ -179,7 +179,7 @@ public class PairsFormat extends AbstractGridFormat {
      */
     public boolean isValidSource(Object source, Hints hints) {
         boolean result = false;
-        LOGGER.log(Level.WARNING, "PairsFormat Source class: " + source.getClass().getName() + ", value: " + source);
+        LOGGER.log(Level.INFO, "PairsFormat Source class: " + source.getClass().getName() + ", value: " + source);
 
         if (source instanceof String) { // HTTP scheme comes in as a String type rather than URI
             String urlPath = source.toString();

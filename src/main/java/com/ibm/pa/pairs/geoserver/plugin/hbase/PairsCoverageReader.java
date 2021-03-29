@@ -156,16 +156,19 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * HOWEVER, the problem arises when we try to do a WPS gs:CropCoverage operation
  * and the input layer is 3857. The originalEnvelope setting is now used
- * extensively in the Goetools code path. It works fine if the original
+ * extensively in the Geotools code path. It works fine if the original
  * GeneralEnvelope is in 4326, but when its in 3857 we fail. In
  * getPairsOriginalEnvelope() I've tried to set the CRS to the input 3857, but
  * that still causes errors, usually a WARN coordinates seem to exceed allowed
  * range. Snd it breaks even a normal WMS getMap() without cropping. SO, this
  * needs more work to make Cropping work with CRS other than 4326.
  * 
- * I recently found some very useful static utilities in geotools Coveridge
- * class to convert coverages between CRS. So can try to covert 4326 to 3857
- * when we return it from read(..).
+ * I recently found some very useful static utilities in geotools Coverage class
+ * to convert coverages between CRS. So can try to covert 4326 to 3857 when we
+ * return it from read(..). Specifically routines to map a coverage from one crs
+ * to another. Or, a planarimage using renderimageops.
+ * 
+ * Also see AbstractGridCoverage2DReader.getResolution()
  * 
  * 
  * End Note regarding originalEnvelope and originalGridRange:
@@ -206,11 +209,18 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             // setlayout(new ImageLayout(0, 0, GRID_WIDTH, GRID_HEIGHT));
         }
 
-        coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
-        if (coverageFactory == null) {
-            logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for hints, creating new");
-            coverageFactory = new GridCoverageFactory();
-        }
+        /**
+         * CoverageFactory should be set in super constructor above super(input,
+         * uHints);
+         * 
+         * todo: remove commented code after testing
+         */
+        // coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(hints);
+        // if (coverageFactory == null) {
+        // logger.log(Level.WARNING, "Pairs; Couldn't find exsiting coverageFactory for
+        // hints, creating new");
+        // coverageFactory = new GridCoverageFactory();
+        // }
     }
 
     /**
@@ -253,7 +263,10 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     }
 
     /**
-     * Number of coverages for this reader is 1
+     * Number of coverages for this reader is 1.
+     * 
+     * For multi-layer request this will become the number parsed from the input
+     * parameters.
      *
      * @return the number of coverages for this reader.
      */
@@ -337,7 +350,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
      */
     @Override
     public GridCoverage2D read(GeneralParameterValue[] params) throws IOException {
-        GridCoverage2D result = null;
+        GridCoverage2D gridCoverage2D = null;
         GeneralEnvelope requestedEnvelope = null;
         Rectangle dim = null;
         Color inputTransparentColor = null;
@@ -425,51 +438,26 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             boundingBox = new BoundingBox(-10, -10, 10, 10);
             requestImageDescriptor = new ImageDescriptor(boundingBox, 5, 5);
             float[] mockupImage = new float[requestImageDescriptor.height * requestImageDescriptor.width];
-            result = buildGridCoverage2D(requestImageDescriptor, mockupImage);
-            return result;
+            gridCoverage2D = buildGridCoverage2D(requestImageDescriptor, mockupImage);
+            return gridCoverage2D;
         }
 
-        Rectangle2D rectangle2D = requestedEnvelope.toRectangle2D();
-        double swlon = rectangle2D.getMinX();
-        double swlat = rectangle2D.getMinY();
-        double nelon = rectangle2D.getMaxX();
-        double nelat = rectangle2D.getMaxY();
-        boundingBox = new BoundingBox(swlon, swlat, nelon, nelat);
-        requestImageDescriptor = new ImageDescriptor(boundingBox, dim.height, dim.width);
-        /**
-         * TODO: An image descriptor is built inside PairsWMSQueryParams
-         * (httpRequestParams) and should be same as the one in the local vars above.
-         * This should be confirmed, and if so then use the one in PairsWMSQueryParams
-         * and remove local var. Then, the line below should be: URI uri =
-         * PairsUtilities.buildPairsDataServiceRasterRequestUri(httpRequestParams);
-         */
         PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
-        logger.info("Local Request ImageDescriptor: " + requestImageDescriptor.toString());
-        logger.info("httpRequestParams Request ImageDescriptor: "
-                + pairsWMSQueryParams.getRequestImageDescriptor().toString());
+        requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
+        logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            HttpResponse response = PairsUtilities.getRasterFromPairsDataService(pairsWMSQueryParams,
-                    requestImageDescriptor);
-
-            String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
-                    PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
-            ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson,
-                    ImageDescriptor.class);
-
-            logger.info("Response ImageDescriptor: " + responseImageDescriptor.toString());
-
-            byte[] rawData = PairsUtilities.readRawContent(response);
-            float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
-
-            result = buildGridCoverage2D(responseImageDescriptor, imageDataFloat);
+            PairsQueryCoverageJob pairsQueryCoverageJob = PairsQueryCoverageJob.buildGridCoverage2D(pairsWMSQueryParams, this);
+            gridCoverage2D = pairsQueryCoverageJob.getGridCoverage2D();
+            // PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this);            
+            // gridCoverage2D = pairsQueryCoverageJob.call();
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage());
+            e.printStackTrace();
             throw new IOException(e.getMessage());
         }
 
         setPairsWMSHttpResponse();
-        return result;
+        return gridCoverage2D;
     }
 
     private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
@@ -481,102 +469,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 responseImageDescriptor.getBoundingBox().getWidth(),
                 responseImageDescriptor.getBoundingBox().getHeight());
 
-        if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
-                .equals(PairsGeoserverExtensionConfig.RASTER)) {
-            float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
-            result = coverageFactory.create(coverageName, raster, responseEnvelope);
-        } else if (PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod()
-                .equals(PairsGeoserverExtensionConfig.BUFFERED_IMAGE)) {
-            BufferedImage image = getImage(responseImageDescriptor, imageVector, "default");
-            result = coverageFactory.create(coverageName, image, responseEnvelope);
-        } else {
-            logger.log(Level.WARNING, "Unknown coverage generation type: "
-                    + PairsGeoserverExtensionConfig.getInstance().getCreateCoverage2DMethod());
-        }
+        float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
+        result = coverageFactory.create(coverageName, raster, responseEnvelope);
 
         return result;
     }
 
-    private BufferedImage getImage(ImageDescriptor imageDescriptor, float[] data, String method) {
-        BufferedImage result = null;
-
-        switch (method) {
-            case "getGrayImageFromIntData":
-                int[] intData = PairsUtilities.floatArray2ScaledIntArray(data);
-                result = getGrayImageFromIntData(imageDescriptor, intData);
-                break;
-
-            case "default":
-            case "getGrayImageFromFloatData":
-                result = getGrayImageFromFloatData(imageDescriptor, data);
-                break;
-
-            case "getRGBImageFromFloatData":
-                result = getRGBImageFromFloatData(imageDescriptor, data);
-                break;
-
-            default:
-                throw new IllegalArgumentException("Invalid image create method: " + method);
-        }
-
-        return result;
-    }
-
-    private BufferedImage getGrayImageFromIntData(ImageDescriptor imageDescriptor, int[] data) {
-        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        int[] nBits = { 8 };
-        ColorModel cm = new ComponentColorModel(cs, nBits, false, true, Transparency.OPAQUE, DataBuffer.TYPE_INT);
-        SampleModel sm = cm.createCompatibleSampleModel(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        DataBufferInt db = new DataBufferInt(data, imageDescriptor.getWidth() * imageDescriptor.getHeight());
-        WritableRaster raster = Raster.createWritableRaster(sm, db, null);
-        BufferedImage image = new BufferedImage(cm, raster, false, null);
-
-        return image;
-    }
-
-    /**
-     * Similar to getImageGray_BYTE, but uses float raster directly, needs test
-     */
-    private BufferedImage getGrayImageFromFloatData(ImageDescriptor imageDescriptor, float[] data) {
-        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-        int[] nBits = { 8 };
-        ColorModel cm = new ComponentColorModel(cs, nBits, false, true, Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
-        SampleModel sm = cm.createCompatibleSampleModel(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        DataBufferFloat db = new DataBufferFloat(data, imageDescriptor.getWidth() * imageDescriptor.getHeight());
-        WritableRaster raster = Raster.createWritableRaster(sm, db, null);
-        BufferedImage image = new BufferedImage(cm, raster, false, null);
-
-        return image;
-    }
-
-    private BufferedImage getRGBImageFromFloatData(ImageDescriptor imageDescriptor, float[] data) {
-        BufferedImage image = new BufferedImage(imageDescriptor.getWidth(), imageDescriptor.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
-        WritableRaster r = image.getRaster();
-        r.setPixels(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), data);
-        return image;
-    }
-
-    /**
-     * urlstr =
-     * "http://pairs-web04:9082/api/v2/data?layerid=PairsUtilities.TEST_LAYERID&timestamp=PairsUtilities.TEST_TIMESTAMP&swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256";
-     */
-    private BufferedImage getImageRGB1(ImageDescriptor imageDescriptor, float[] data) {
-        BufferedImage result = new BufferedImage(imageDescriptor.getWidth(), imageDescriptor.getHeight(),
-                BufferedImage.TYPE_INT_RGB);
-
-        int[] imageDataInt = PairsUtilities.floatArray2IntArray(data);
-        WritableRaster writeableRaster = result.getRaster();
-        writeableRaster.setDataElements(0, 0, result.getWidth(), result.getHeight(), imageDataInt);
-
-        try {
-            result.setRGB(0, 0, imageDescriptor.getWidth(), imageDescriptor.getHeight(), imageDataInt, 0,
-                    imageDescriptor.getWidth());
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error getting image: " + e.getMessage());
-            result = PairsUtilities.getTestImageIntRGB(imageDescriptor.getWidth(), imageDescriptor.getHeight());
-        }
-        return result;
+    public GridCoverageFactory getGridCoverageFactory() {
+        return super.coverageFactory;
     }
 
     /**
@@ -599,59 +499,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         }
     }
 
-    /**
-     * Crop and resample to requested NOTE; The input image is shallow copy and
-     * return so note that any changes to result pixels will reflect in original
-     * 
-     * @param img
-     * @param src
-     * @param tgt
-     * @return
-     */
-    private BufferedImage cropImage(BufferedImage img, ImageDescriptor src, ImageDescriptor tgt) {
-        double degreeToPixelX = src.getBoundingBox().getWidth() / src.getWidth(); // X,Y should be ==
-        double degreeToPixelY = src.getBoundingBox().getHeight() / src.getHeight();
-        double degreeToPixel = degreeToPixelX;
-
-        int offsetX = (int) Math
-                .round((tgt.getBoundingBox().getSwLonLat()[0] - src.getBoundingBox().getSwLonLat()[0]) / degreeToPixel);
-        int offsetY = (int) Math
-                .round((tgt.getBoundingBox().getSwLonLat()[1] - src.getBoundingBox().getSwLonLat()[1]) / degreeToPixel);
-        int width = (int) Math.round(src.getBoundingBox().getWidth() / degreeToPixel);
-        int height = (int) Math.round(src.getBoundingBox().getHeight() / degreeToPixel);
-
-        BufferedImage dest = img.getSubimage(offsetX, offsetY, width, height);
-        return dest;
-    }
-
-    /**
-     * see https://memorynotfound.com/java-resize-image-fixed-width-height-example/
-     * Add imageObserver to drawImage(...) call if want to wait in loop after
-     * drawImage() call until image drawn, this probably not required, async
-     * rendering OK
-     */
-    private BufferedImage resizeImage(BufferedImage img, ImageDescriptor tgt) {
-        ImageObserver imageObserver = null;
-
-        Image rescaled = img.getScaledInstance(tgt.getWidth(), tgt.getHeight(), Image.SCALE_SMOOTH);
-        BufferedImage resized = new BufferedImage(tgt.getWidth(), tgt.getHeight(), img.getType());
-        resized.getGraphics().drawImage(rescaled, 0, 0, imageObserver);
-        resized.getGraphics().dispose();
-        return resized;
-    }
-
-    /**
-     * Use in above to make resizeImage() synchronous, not tested
-     */
-    ImageObserver imageObserver = new ImageObserver() {
-        public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
-            if ((infoflags & ImageObserver.ALLBITS) != ALLBITS)
-                return true;
-            else
-                return false;
-        }
-    };
-
 }
 
 /**
@@ -666,4 +513,41 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
  * 
  * image = resizeImage(image, requestImageDescriptor); image = cropImage(image,
  * responseImageDescriptor, requestImageDescriptor);
+ * 
+ * 
+ * /** Crop and resample to requested NOTE; The input image is shallow copy and
+ * return so note that any changes to result pixels will reflect in original
+ * 
+ * @param img
+ * @param src
+ * @param tgt
+ * @return
+ * 
+ *         private BufferedImage cropImage(BufferedImage img, ImageDescriptor
+ *         src, ImageDescriptor tgt) { double degreeToPixelX =
+ *         src.getBoundingBox().getWidth() / src.getWidth(); // X,Y should be ==
+ *         double degreeToPixelY = src.getBoundingBox().getHeight() /
+ *         src.getHeight(); double degreeToPixel = degreeToPixelX;
+ * 
+ *         int offsetX = (int) Math
+ *         .round((tgt.getBoundingBox().getSwLonLat()[0] -
+ *         src.getBoundingBox().getSwLonLat()[0]) / degreeToPixel); int offsetY
+ *         = (int) Math .round((tgt.getBoundingBox().getSwLonLat()[1] -
+ *         src.getBoundingBox().getSwLonLat()[1]) / degreeToPixel); int width =
+ *         (int) Math.round(src.getBoundingBox().getWidth() / degreeToPixel);
+ *         int height = (int) Math.round(src.getBoundingBox().getHeight() /
+ *         degreeToPixel);
+ * 
+ *         BufferedImage dest = img.getSubimage(offsetX, offsetY, width,
+ *         height); return dest; }
+ * 
+ * 
+ *         private BufferedImage resizeImage(BufferedImage img, ImageDescriptor
+ *         tgt) { ImageObserver imageObserver = null;
+ * 
+ *         Image rescaled = img.getScaledInstance(tgt.getWidth(),
+ *         tgt.getHeight(), Image.SCALE_SMOOTH); BufferedImage resized = new
+ *         BufferedImage(tgt.getWidth(), tgt.getHeight(), img.getType());
+ *         resized.getGraphics().drawImage(rescaled, 0, 0, imageObserver);
+ *         resized.getGraphics().dispose(); return resized; }
  */

@@ -29,6 +29,7 @@ public class PairsGeoserverExtensionConfig {
     public static String PAIRS_HEADER_KEY = "ibmpairs";
     public static String PAIRS_QUERY_STRING_KEY_PREFIX = "ibmpairs";
     public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid";
+    public static String PAIRS_QUERY_KEY_LAYERID2 = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid2";
     public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_timestamp";
     public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_statistic";
     public static String PAIRS_QUERY_KEY_DIMENSION = PAIRS_QUERY_STRING_KEY_PREFIX + "_dimension";
@@ -45,7 +46,7 @@ public class PairsGeoserverExtensionConfig {
      * to ignore in PairsGeo...Config.json use: "pairsDataServiceBaseRasterUrl": ""
      * 
      */
-    private String pairsDataServiceBaseUrl = "https://pairs.res.ibm.com:8080/api/v1/";
+    private String pairsDataServiceBaseUrl = "https://pairs.res.ibm.com:8080/pairsdataservice/v2/";
     private String pairsDataServiceUid = "";
     private String pairsDataServicePw = "";
 
@@ -88,12 +89,24 @@ public class PairsGeoserverExtensionConfig {
             logger.warning("Using default config from class constructor");
         }
 
+        checkFields(instance);
         logger.info(instance.toString());
 
         return instance;
     }
 
     private PairsGeoserverExtensionConfig() {
+    }
+
+    /**
+     * Verify the fields. Fix missing '/' this should be verified in
+     * routines using URL
+     * 
+     * @param instance
+     */
+    private static void checkFields(PairsGeoserverExtensionConfig instance) {
+        if (!instance.pairsDataServiceBaseUrl.endsWith("/"))
+            instance.pairsDataServiceBaseUrl += "/";
     }
 
     private static PairsGeoserverExtensionConfig readFromResources() {
@@ -111,7 +124,8 @@ public class PairsGeoserverExtensionConfig {
     }
 
     private static void writeToFileSystem() throws JsonGenerationException, JsonMappingException, IOException {
-        Path path = Paths.get(System.getProperty("user.home"), "pairsDataService");;
+        Path path = Paths.get(System.getProperty("user.home"), "pairsDataService");
+        ;
         Files.createDirectories(path);
         path = path.resolve(CONFIG_FILE);
         path.toFile().createNewFile();
@@ -125,7 +139,7 @@ public class PairsGeoserverExtensionConfig {
     @Override
     public String toString() {
         try {
-            return PairsUtilities.serializeObject(this);
+            return PairsUtilities.serializeObjectPretty(this);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return e.toString();

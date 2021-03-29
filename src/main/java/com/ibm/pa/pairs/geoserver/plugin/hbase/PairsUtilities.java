@@ -76,44 +76,7 @@ public class PairsUtilities {
         double r = getPairsResolution(layerId, statistic, imageDescriptor);
         logger.info("resolution: " + r);
     }
-
-    public static BufferedImage testHbaseServiceCall() throws URISyntaxException, ClientProtocolException, IOException {
-        PairsWMSQueryParam queryParams = new PairsWMSQueryParam();
-        queryParams.setLayerid(TEST_LAYERID);
-        queryParams.setTimestamp(TEST_TIMESTAMP);
-        queryParams.setLayerid(-1);
-        queryParams.setStatistic("Mean");
-        queryParams.setRequestImageDescriptor(TEST_IMAGE_DESCRIPTOR);
-
-        HttpResponse response = getRasterFromPairsDataService(queryParams, TEST_IMAGE_DESCRIPTOR);
-
-        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            response.getEntity().writeTo(baos);
-            String msg = baos.toString("UTF-8");
-            logger.severe(" status: " + response.getStatusLine().getStatusCode() + ", msg: " + msg);
-            return null;
-        }
-
-        String pairsHeader = getResponseHeader(response, PAIRS_DATA_SERVICE_HEADER_KEY);
-        logger.info("Pairs response header: " + pairsHeader);
-        ImageDescriptor responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeader, ImageDescriptor.class);
-        byte[] rawData = readRawContent(response);
-        logger.info("Pairs data length: " + rawData.length);
-        float[] imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
-        int[] imageDataInt = PairsUtilities.floatArray2ScaledIntArray(imageDataFloat);
-
-        BufferedImage image = new BufferedImage(responseImageDescriptor.getWidth(), responseImageDescriptor.getHeight(),
-                BufferedImage.TYPE_BYTE_GRAY);
-        WritableRaster wr = image.getRaster();
-        wr.setPixels(0, 0, responseImageDescriptor.getWidth(), responseImageDescriptor.getHeight(), imageDataInt);
-        // DataBufferInt db = (DataBufferInt) wr.getDataBuffer();
-        // int[] bufferedData = db.getData();
-        // System.arraycopy(imageDataInt, 0, bufferedData, 0, imageDataInt.length);
-
-        return image;
-    }
-
+    
     /**
      * Build uri to return a raster from pairs-data-service:
      * 
@@ -166,7 +129,7 @@ public class PairsUtilities {
             throws ClientProtocolException, IOException, URISyntaxException {
 
         URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
-                + "dataquery/" + "layer/" + layerId + "/level");
+                + "dataquery/layer/" + layerId + "/level");
 
         builder.setParameter("width", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
