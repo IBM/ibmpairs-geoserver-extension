@@ -1,3 +1,5 @@
+# Automated Release 0.39.0
+* 5ecaea8 - Norm/dev (#59)
 # Automated Release 0.38.0
 * 94390d1 - Build zip file with dependencies (#58)
 # Automated Release 0.37.0
