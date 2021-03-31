@@ -1,3 +1,5 @@
+# Automated Release 0.40.0
+* d9e6685 - Norm/dev (#60)
 # Automated Release 0.39.0
 * 5ecaea8 - Norm/dev (#59)
 # Automated Release 0.38.0
