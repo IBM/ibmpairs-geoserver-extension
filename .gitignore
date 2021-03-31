@@ -1,6 +1,7 @@
 
 # vs code stuff
 target/
+*.log
 
 logs/
 persistence.xml
