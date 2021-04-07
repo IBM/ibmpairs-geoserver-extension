@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<StyledLayerDescriptor 
-    xmlns="http://www.opengis.net/sld"
-    xmlns:ogc="http://www.opengis.net/ogc"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd" version="1.0.0">
+<StyledLayerDescriptor version="1.0.0" xsi:schemaLocation="http://www.opengis.net/sld http://schemas.opengis.net/sld/1.0.0/StyledLayerDescriptor.xsd" xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <NamedLayer>
         <Name>pairs:pairspluginlayer</Name>
         <UserStyle>
@@ -17,11 +12,7 @@
                         </ogc:Function>
                         <ogc:Function name="parameter">
                             <ogc:Literal>script</ogc:Literal>
-                            <ogc:Literal>
-                nir = src[7];
-                vir = src[3];
-                dest = (nir - vir) / (nir + vir);
-              </ogc:Literal>
+                            <ogc:Literal>                nir = src[1];                vir = src[0];                dest = (nir - vir) / (nir + vir);              </ogc:Literal>
                         </ogc:Function>
                     </ogc:Function>
                 </Transformation>

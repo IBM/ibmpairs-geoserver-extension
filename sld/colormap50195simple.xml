@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" xmlns:sld="http://www.opengis.net/sld">
+    <UserLayer>
+        <Name>pairs:pairspluginlayer</Name>
+        <UserStyle>
+            <Name>norm</Name>
+            <Title />
+            <FeatureTypeStyle>
+                <Name />
+                <Rule>
+                    <RasterSymbolizer>
+                        <Geometry>
+                            <PropertyName>grid</PropertyName>
+                        </Geometry>
+                        <Opacity>1</Opacity>
+                        <ColorMap>
+                            <ColorMapEntry color="#FFFFFF" label="NO_DATA" opacity="0.0" quantity="-9999" />
+                            <ColorMapEntry color="#00009F" label="240.0" opacity="1.0" quantity="240.0" />
+                            <ColorMapEntry color="#0000BF" label="242.09677" opacity="1.0" quantity="242.09677" />
+                            <ColorMapEntry color="#0000DF" label="244.19354" opacity="1.0" quantity="244.19354" />
+                            <ColorMapEntry color="#0000FF" label="246.29033" opacity="1.0" quantity="246.29033" />
+                            <ColorMapEntry color="#0020FF" label="248.3871" opacity="1.0" quantity="248.3871" />
+                            <ColorMapEntry color="#0040FF" label="250.48387" opacity="1.0" quantity="250.48387" />
+                            <ColorMapEntry color="#0060FF" label="252.58064" opacity="1.0" quantity="252.58064" />
+                            <ColorMapEntry color="#0080FF" label="254.67741" opacity="1.0" quantity="254.67741" />
+                            <ColorMapEntry color="#009FFF" label="256.7742" opacity="1.0" quantity="256.7742" />
+                            <ColorMapEntry color="#00BFFF" label="258.87097" opacity="1.0" quantity="258.87097" />
+                            <ColorMapEntry color="#00DFFF" label="260.96774" opacity="1.0" quantity="260.96774" />
+                            <ColorMapEntry color="#00FFFF" label="263.0645" opacity="1.0" quantity="263.0645" />
+                            <ColorMapEntry color="#20FFDF" label="265.1613" opacity="1.0" quantity="265.1613" />
+                            <ColorMapEntry color="#40FFBF" label="267.25806" opacity="1.0" quantity="267.25806" />
+                            <ColorMapEntry color="#60FF9F" label="269.35483" opacity="1.0" quantity="269.35483" />
+                            <ColorMapEntry color="#80FF80" label="271.4516" opacity="1.0" quantity="271.4516" />
+                            <ColorMapEntry color="#9FFF60" label="273.5484" opacity="1.0" quantity="273.5484" />
+                            <ColorMapEntry color="#BFFF40" label="275.64517" opacity="1.0" quantity="275.64517" />
+                            <ColorMapEntry color="#DFFF20" label="277.74194" opacity="1.0" quantity="277.74194" />
+                            <ColorMapEntry color="#FFFF00" label="279.8387" opacity="1.0" quantity="279.8387" />
+                            <ColorMapEntry color="#FFDF00" label="281.9355" opacity="1.0" quantity="281.9355" />
+                            <ColorMapEntry color="#FFBF00" label="284.03226" opacity="1.0" quantity="284.03226" />
+                            <ColorMapEntry color="#FF9F00" label="286.12903" opacity="1.0" quantity="286.12903" />
+                            <ColorMapEntry color="#FF8000" label="288.2258" opacity="1.0" quantity="288.2258" />
+                            <ColorMapEntry color="#FF6000" label="290.32257" opacity="1.0" quantity="290.32257" />
+                            <ColorMapEntry color="#FF4000" label="292.41934" opacity="1.0" quantity="292.41934" />
+                            <ColorMapEntry color="#FF2000" label="294.5161" opacity="1.0" quantity="294.5161" />
+                            <ColorMapEntry color="#FF0000" label="296.6129" opacity="1.0" quantity="296.6129" />
+                            <ColorMapEntry color="#DF0000" label="298.7097" opacity="1.0" quantity="298.7097" />
+                            <ColorMapEntry color="#BF0000" label="300.80646" opacity="1.0" quantity="300.80646" />
+                            <ColorMapEntry color="#9F0000" label="302.90323" opacity="1.0" quantity="302.90323" />
+                            <ColorMapEntry color="#800000" label="305.0" opacity="1.0" quantity="305.0" />
+                        </ColorMap>
+                    </RasterSymbolizer>
+                </Rule>
+            </FeatureTypeStyle>
+        </UserStyle>
+    </UserLayer>
+</StyledLayerDescriptor>
