@@ -72,12 +72,15 @@ public class PairsUtilities {
         ImageDescriptor imageDescriptor = new ImageDescriptor(new double[] { -90, 50, -80, 60 }, 256, 128);
         int layerId = 51;
         String statistic = "";
-        
+
         double r = getPairsResolution(layerId, statistic, imageDescriptor);
         logger.info("resolution: " + r);
     }
-    
+
     /**
+     * Deprecated March 2021, replace by methods in class PairsQueryCoverageJob, see
+     * public void getDataFromPairsDataService(Integer layerId).
+     * 
      * Build uri to return a raster from pairs-data-service:
      * 
      * "http://pairs.res.ibm.com:8080/api/v1/dataquery?layerid=49180&timestamp=1435708800&
@@ -125,8 +128,9 @@ public class PairsUtilities {
         return response;
     }
 
-    public static double getPairsResolution(int layerId, String statistic, ImageDescriptor imageDescriptor)
+    public static Double getPairsResolution(int layerId, String statistic, ImageDescriptor imageDescriptor)
             throws ClientProtocolException, IOException, URISyntaxException {
+        Double resolution = null;
 
         URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
                 + "dataquery/layer/" + layerId + "/level");
@@ -147,22 +151,27 @@ public class PairsUtilities {
                         PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
 
         HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-       
+
         HttpResponse response = httpClient.execute(request);
-        String json = EntityUtils.toString(response.getEntity());
-        ResultWrapper rw = deserializeJson(json, ResultWrapper.class);
-        double resolution = 1e-06 * Math.pow(2, 29 - rw.value);
+
+        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            logger.info("request: " + request.getURI().toString() + ", status: "
+                    + response.getStatusLine().getStatusCode() + ", " + response.getStatusLine().getReasonPhrase());
+        } else {
+            String json = EntityUtils.toString(response.getEntity());
+            ResultWrapper rw = deserializeJson(json, ResultWrapper.class);
+            resolution = 1e-06 * Math.pow(2, 29 - rw.value);
+        }
+
         return resolution;
     }
 
     public static byte[] readRawContent(HttpResponse response)
             throws ClientProtocolException, IOException, URISyntaxException {
         long len = response.getEntity().getContentLength();
-        byte[] result = new byte[(int) len];
-
-        // int nread = response.getEntity().getContent().read(result);
         InputStream is = response.getEntity().getContent();
-        result = inputStream2ByteArray(is);
+        byte[] result = inputStream2ByteArray(is);
+        is.close();
 
         if (result.length != len) {
             logger.severe(String.format("Error bytes read: %d != contentLength: %d", result.length, len));
@@ -186,23 +195,24 @@ public class PairsUtilities {
      */
     public static byte[] inputStream2ByteArray(InputStream is) throws IOException {
         byte[] result = null;
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) Math.pow(2, 21));
+        int bufferSize = (int) Math.pow(2, 16);
+        byte[] data = new byte[bufferSize];
         int nRead;
-        byte[] data = new byte[(int) Math.pow(2, 16)];
-        BufferedInputStream bis = new BufferedInputStream(is);
+        BufferedInputStream bis = new BufferedInputStream(is, bufferSize);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) Math.pow(2, 20));
 
         while ((nRead = bis.read(data, 0, data.length)) != -1) {
             buffer.write(data, 0, nRead);
         }
+        buffer.flush();
         result = buffer.toByteArray();
         return result;
     }
 
     public static float[] byteArray2FloatArray(byte[] input) {
-        float[] result = null;
         ByteBuffer bb = ByteBuffer.wrap(input);
         FloatBuffer fb = bb.asFloatBuffer();
-        result = new float[fb.limit()];
+        float[] result = new float[fb.limit()];
         fb.get(result);
         return result;
     }

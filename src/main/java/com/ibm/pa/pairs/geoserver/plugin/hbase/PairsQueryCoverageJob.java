@@ -3,11 +3,13 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 import java.awt.Point;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
-import java.awt.image.SampleModel;
 import java.awt.image.Raster;
+import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
