@@ -275,7 +275,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return 1;
     }
 
-    private double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
+    private Double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
         // return 0.000064;
         ImageDescriptor imageDescriptor = httpRequestParams.getRequestImageDescriptor();
         int layerId = this.httpRequestParams.getLayerid();
