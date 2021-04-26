@@ -12,7 +12,7 @@
 
     <groupId>com.ibm.pairs</groupId>
     <artifactId>pairs-geoserver-extension</artifactId>
-    <version>0.40.0</version>
+    <version>0.41.0</version>
     <packaging>jar</packaging>
 
     <name>pairs-geoserver-extension</name>
