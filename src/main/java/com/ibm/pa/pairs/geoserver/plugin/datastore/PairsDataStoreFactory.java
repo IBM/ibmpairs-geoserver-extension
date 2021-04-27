@@ -52,7 +52,7 @@ public class PairsDataStoreFactory implements DataStoreFactorySpi {
      * PAIRS_DATASTORE.... param matching
      */
     @Override
-    public boolean canProcess(Map<String, Serializable> params) {
+    public boolean canProcess(Map<String, ?> params) {
         boolean result = false;
         for (String key : params.keySet()) {
             Object value = params.get(key);
@@ -107,14 +107,14 @@ public class PairsDataStoreFactory implements DataStoreFactorySpi {
     }
 
     @Override
-    public DataStore createDataStore(Map<String, Serializable> params) throws IOException {
+    public DataStore createDataStore(Map<String, ?> params) throws IOException {
         PairsDataStore dataStore = new PairsDataStore(params);
         dataStore.setDataStoreFactory(this);
         return dataStore;
     }
 
     @Override
-    public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
+    public DataStore createNewDataStore(Map<String, ?> params) throws IOException {
         return createDataStore(params);
     }
 }

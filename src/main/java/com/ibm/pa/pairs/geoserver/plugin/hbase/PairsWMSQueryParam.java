@@ -51,38 +51,41 @@ public class PairsWMSQueryParam {
             return null;
         }
 
-        Map<String, String> kvp = req.getRawKvp();
+        Map<String, Object> kvp = req.getRawKvp();
         Map<String, String> invalidParams = queryParams.validateParams(kvp);
         if (!invalidParams.isEmpty())
             throw new IllegalArgumentException(invalidParams.toString());
 
-        queryParams.layerid = (Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
-        if(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2) != null) {
-            queryParams.layerid2 = Integer.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2));
+        queryParams.layerid = (Integer
+                .valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
+        if (kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2) != null) {
+            queryParams.layerid2 = Integer
+                    .valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2));
         }
 
-        queryParams.setTimestamp(Long.valueOf(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
-        queryParams.setStatistic(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
-        queryParams.setCrs(kvp.get("CRS"));
+        queryParams
+                .setTimestamp(Long.valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
+        queryParams.setStatistic((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
+        queryParams.setCrs((String) kvp.get("CRS"));
 
-        String bboxStr = kvp.get("BBOX");
+        String bboxStr = (String) kvp.get("BBOX");
         StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
         double swlat = Double.parseDouble(bboxTkn.nextToken());
         double swlon = Double.parseDouble(bboxTkn.nextToken());
         double nelat = Double.parseDouble(bboxTkn.nextToken());
         double nelon = Double.parseDouble(bboxTkn.nextToken());
-        int height = Integer.parseInt(kvp.get("HEIGHT"));
-        int width = Integer.parseInt(kvp.get("WIDTH"));
+        int height = Integer.parseInt((String) kvp.get("HEIGHT"));
+        int width = Integer.parseInt((String) kvp.get("WIDTH"));
         BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
         queryParams.setRequestImageDescriptor(new ImageDescriptor(bbox, height, width));
 
-        queryParams.setDimension(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION));
-        queryParams.setDimensionValue(kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION_VALUE));
-        
+        queryParams.setDimension((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION));
+        queryParams.setDimensionValue((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION_VALUE));
+
         return queryParams;
     }
 
-    public Map<String, String> validateParams(Map<String, String> params) {
+    public Map<String, String> validateParams(Map<String, Object> params) {
         Map<String, String> invalidParams = new HashMap<>();
         return invalidParams;
     }

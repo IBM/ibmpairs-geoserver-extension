@@ -37,9 +37,9 @@ import org.opengis.feature.type.Name;
  * @source $URL$
  */
 public class PairsDataStore extends ContentDataStore {
-        Map<String, Serializable> params;
+        Map<String, ?> params;
 
-        public PairsDataStore(Map<String, Serializable> params) {
+        public PairsDataStore(Map<String, ?> params) {
                 super();
                 this.params = params;
                 DefaultServiceInfo defaultServiceInfo = (DefaultServiceInfo) super.getInfo();
