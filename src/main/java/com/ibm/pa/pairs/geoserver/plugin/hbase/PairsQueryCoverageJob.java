@@ -81,14 +81,16 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
      * @return
      * @throws Exception
      */
-    public static PairsQueryCoverageJob buildGridCoverage2D(PairsWMSQueryParam queryParams,
-            PairsCoverageReader coverageReader) throws Exception {
-        PairsQueryCoverageJob result = null;
+    public static GridCoverage2D buildGridCoverage2D(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader)
+            throws Exception {
+        GridCoverage2D gridCoverage2D = null;
 
         if (queryParams.getLayerid2() == null) {
-            result = new PairsQueryCoverageJob(queryParams, coverageReader, queryParams.getLayerid(), false);
-            result.call();
-            return result;
+            PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, coverageReader,
+                    queryParams.getLayerid(), false);
+            pqcj.call();
+            gridCoverage2D = pqcj.getGridCoverage2D();
+            return gridCoverage2D;
         }
 
         PairsQueryCoverageJob pairsQueryCoverageJob1 = new PairsQueryCoverageJob(queryParams, coverageReader,
@@ -108,17 +110,17 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
                 new Point(0, 0));
 
-        GridCoverage2D gridCoverage2D = pairsQueryCoverageJob1.getGridCoverageFactory().create(
+        gridCoverage2D = pairsQueryCoverageJob1.getGridCoverageFactory().create(
                 pairsQueryCoverageJob1.getCoverageName(), writableRaster,
                 pairsQueryCoverageJob1.getResponseEnvelope2D());
 
-        result = new PairsQueryCoverageJob(queryParams, coverageReader);
-        result.setResponseImageDescriptor(pairsQueryCoverageJob1.getResponseImageDescriptor());
-        result.setResponseEnvelope2D(pairsQueryCoverageJob1.getResponseEnvelope2D());
-        result.setWritableRaster(writableRaster);
-        result.setGridCoverage2D(gridCoverage2D);
+        // result = new PairsQueryCoverageJob(queryParams, coverageReader);
+        // result.setResponseImageDescriptor(pairsQueryCoverageJob1.getResponseImageDescriptor());
+        // result.setResponseEnvelope2D(pairsQueryCoverageJob1.getResponseEnvelope2D());
+        // result.setWritableRaster(writableRaster);
+        // result.setGridCoverage2D(gridCoverage2D);
 
-        return result;
+        return gridCoverage2D;
     }
 
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader) {

@@ -447,9 +447,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
 
         try {
-            PairsQueryCoverageJob pairsQueryCoverageJob = PairsQueryCoverageJob.buildGridCoverage2D(pairsWMSQueryParams, this);
-            gridCoverage2D = pairsQueryCoverageJob.getGridCoverage2D();
-            // PairsQueryCoverageJob pairsQueryCoverageJob = new PairsQueryCoverageJob(pairsWMSQueryParams, this);            
+            gridCoverage2D = PairsQueryCoverageJob.buildGridCoverage2D(pairsWMSQueryParams, this);
+            // PairsQueryCoverageJob pairsQueryCoverageJob = new
+            // PairsQueryCoverageJob(pairsWMSQueryParams, this);
             // gridCoverage2D = pairsQueryCoverageJob.call();
         } catch (Exception e) {
             e.printStackTrace();
