@@ -62,6 +62,8 @@ import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ibm.pa.utils.PairsUtilities;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.geotools.coverage.CoverageFactoryFinder;

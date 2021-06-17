@@ -7,67 +7,44 @@ import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ibm.pa.utils.JsonSerializable;
+import com.ibm.pa.utils.PairsUtilities;
+
+/**
+ * Return the query value contained in the threadlocal query string TODO Its
+ * client issues WMS request with ibmpairs specific query strings
+ * &ibmpairs_layeid=49180&ibmpairs_timestamp=123456
+ * 
+ * Update: dec 2020, Dispatcher.REQUEST will be null on certain adminstrative
+ * requests Like create data store. In this case a null is returned and the
+ * PairsCoverageReader handles the null context for original bbox etc.
+ * 
+ */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PairsWMSQueryParam {
+public class PairsWMSQueryParam implements JsonSerializable {
     static final Logger logger = Logger.getLogger(PairsWMSQueryParam.class.getName());
-    Integer layerid;
-    Integer layerid2;
-    long timestamp;
+    String service;
+    String version;
+    String request;
     String statistic;
     int level = -1;
     String crs;
+    String ibmpairslayer;
+    PairsLayerRequestType[] layers;
     ImageDescriptor requestImageDescriptor;
-    String dimension;
-    String dimensionValue;
 
-    /**
-     * Return the query value contained in the threadlocal query string TODO Its
-     * client issues WMS request with ibmpairs specific query strings
-     * &ibmpairs_layeid=49180&ibmpairs_timestamp=123456
-     * 
-     * Update: dec 2020, Dispatcher.REQUEST will be null on certain adminstrative
-     * requests Like create data store. In this case a null is returned and the
-     * PairsCoverageReader handles the null context for original bbox etc.
-     * 
-     * Update: Dec 2020 add simple suppport for single dimension and value.
-     * 
-     * TODO: Add general query support for multiple dimensions/values for multiple
-     * by returning multiband tif in PairsCoverageReader
-     * 
-     * TODO: Add POST support
-     * 
-     * TODO: Improve error handling returned to client.
-     * 
-     */
-    public static PairsWMSQueryParam getRequestQueryStringParameter() throws IllegalArgumentException {
-        PairsWMSQueryParam queryParams = new PairsWMSQueryParam();
+    public PairsWMSQueryParam(Map<String, Object> kvp, Map<String, String[]> httpRequestParamMap) throws Exception {
+        Map<String, String> invalidParams;
 
-        org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
-        if (req == null) {
-            String msg = "Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()";
-            logger.info(msg);
-            // throw new IllegalArgumentException(msg);
-            return null;
-        }
-
-        Map<String, Object> kvp = req.getRawKvp();
-        Map<String, String> invalidParams = queryParams.validateParams(kvp);
+        invalidParams = validateParams(kvp);
         if (!invalidParams.isEmpty())
             throw new IllegalArgumentException(invalidParams.toString());
 
-        queryParams.layerid = (Integer
-                .valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID)));
-        if (kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2) != null) {
-            queryParams.layerid2 = Integer
-                    .valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_LAYERID2));
-        }
+        setStatistic((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
+        setCrs((String) kvp.get("CRS"));
 
-        queryParams
-                .setTimestamp(Long.valueOf((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_TIMESTAMP)));
-        queryParams.setStatistic((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
-        queryParams.setCrs((String) kvp.get("CRS"));
-
+        // Build the request image descriptor
         String bboxStr = (String) kvp.get("BBOX");
         StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
         double swlat = Double.parseDouble(bboxTkn.nextToken());
@@ -77,12 +54,34 @@ public class PairsWMSQueryParam {
         int height = Integer.parseInt((String) kvp.get("HEIGHT"));
         int width = Integer.parseInt((String) kvp.get("WIDTH"));
         BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
-        queryParams.setRequestImageDescriptor(new ImageDescriptor(bbox, height, width));
+        setRequestImageDescriptor(new ImageDescriptor(bbox, height, width));
 
-        queryParams.setDimension((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION));
-        queryParams.setDimensionValue((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_DIMENSION_VALUE));
+        // Build the requested layers
+        layers = createRequestlayers(ibmpairslayer);
+    }
 
-        return queryParams;
+    public static PairsWMSQueryParam buildPairsWMSQueryParam() {
+        Map<String, Object> kvp = null;
+        Map<String, String[]> httpRequestParamMap = null;
+
+        org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
+        if (req == null) {
+            // see comments above about update: dec 2020
+            String msg = "Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()";
+            logger.info(msg);
+            // throw new IllegalArgumentException(msg);
+            return null;
+        }
+
+        httpRequestParamMap = req.getHttpRequest().getParameterMap();
+        kvp = req.getRawKvp();
+        PairsWMSQueryParam result = new PairsWMSQueryParam(kvp, httpRequestParamMap);
+        return result;
+    }
+
+    private PairsLayerRequestType[] createRequestlayers(String json) throws Exception {
+        PairsLayerRequestType[] layers = PairsLayerRequestType.buildFromJson(json);
+        return layers;
     }
 
     public Map<String, String> validateParams(Map<String, Object> params) {
@@ -92,17 +91,17 @@ public class PairsWMSQueryParam {
 
     @Override
     public String toString() {
-        String result = "Serialization to Json failed";
+        String result = "Serialization PairsQueryParams to Json failed";
         try {
-            result = PairsUtilities.serializeObject(this);
-        } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
+            result = serialize();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return result;
     }
 
-    public PairsWMSQueryParam() {
+    public PairsLayerRequestType[] getLayers() {
+        return this.layers;
     }
 
     public String getStatistic() {
@@ -111,22 +110,6 @@ public class PairsWMSQueryParam {
 
     public void setStatistic(String statistic) {
         this.statistic = statistic;
-    }
-
-    public Integer getLayerid() {
-        return this.layerid;
-    }
-
-    public Integer getLayerid2() {
-        return this.layerid2;
-    }
-
-    public long getTimestamp() {
-        return this.timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
     }
 
     public ImageDescriptor getRequestImageDescriptor() {
@@ -143,22 +126,6 @@ public class PairsWMSQueryParam {
 
     public void setCrs(String crs) {
         this.crs = crs;
-    }
-
-    public String getDimension() {
-        return dimension;
-    }
-
-    public void setDimension(String dimension) {
-        this.dimension = dimension;
-    }
-
-    public String getDimensionValue() {
-        return dimensionValue;
-    }
-
-    public void setDimensionValue(String dimensionValue) {
-        this.dimensionValue = dimensionValue;
     }
 
     public int getLevel() {

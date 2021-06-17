@@ -7,9 +7,8 @@ import java.awt.image.Raster;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -17,6 +16,8 @@ import javax.media.jai.DataBufferFloat;
 import javax.media.jai.PlanarImage;
 import javax.media.jai.RasterFactory;
 import javax.media.jai.TiledImage;
+
+import com.ibm.pa.utils.PairsUtilities;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -61,10 +62,10 @@ import org.geotools.geometry.Envelope2D;
 public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     private static final Logger logger = org.geotools.util.logging.Logging.getLogger(PairsQueryCoverageJob.class);
     PairsWMSQueryParam queryParams;
+    PairsRasterRequest pairsRasterRequest;
     PairsCoverageReader pairsCoverageReader;
     String coverageName;
     GridCoverageFactory gridCoverageFactory;
-    Integer layerId;
     Boolean dataBufferOnly = false;
     ImageDescriptor responseImageDescriptor;
     Envelope2D responseEnvelope2D;
@@ -74,7 +75,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     GridCoverage2D gridCoverage2D;
 
     /**
-     * Convenience method for getting a GridCoverage2D
+     * Convenience method for getting rasters and building a multi-band coverage
      * 
      * @param queryParams
      * @param coverageReader
@@ -84,6 +85,13 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     public static GridCoverage2D buildGridCoverage2D(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader)
             throws Exception {
         GridCoverage2D gridCoverage2D = null;
+
+        List<PairsRasterRequest> pairsRasterReqs = PairsRasterRequest.generateRequestForEachLayer(queryParams);
+        for (PairsRasterRequest req : pairsRasterReqs) {
+            PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, coverageReader,
+                    queryParams.getLayerid(), false);
+            pqcj.call();
+        }
 
         if (queryParams.getLayerid2() == null) {
             PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, coverageReader,
@@ -121,6 +129,13 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         // result.setGridCoverage2D(gridCoverage2D);
 
         return gridCoverage2D;
+    }
+
+    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsRasterRequest pairsRasterRequest, PairsCoverageReader coverageReader, Boolean dataBufferOnly){
+        this.queryParams = queryParams;
+        this.pairsRasterRequest = pairsRasterRequest;
+        this.pairsCoverageReader = coverageReader;
+        this.dataBufferOnly = dataBufferOnly;
     }
 
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader) {

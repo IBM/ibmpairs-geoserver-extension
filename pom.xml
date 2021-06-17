@@ -7,7 +7,7 @@
         <java.version>1.8</java.version>
         <geoserver.version>2.19.0</geoserver.version>
         <jackson2.version>2.11.1</jackson2.version>
-        <branch.name>-wcs01</branch.name>
+        <branch.name>-wcs02</branch.name>
     </properties>
 
     <groupId>com.ibm.pairs</groupId>

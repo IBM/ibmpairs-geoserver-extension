@@ -11,6 +11,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class BoundingBox {
     private double[] boundingArray;
 
+    public BoundingBox(String bbox){
+        String[] coords = bbox.split(",");
+        boundingArray[0] = Double.parseDouble(coords[0]);
+        boundingArray[1] = Double.parseDouble(coords[1]);
+        boundingArray[2] = Double.parseDouble(coords[2]);
+        boundingArray[3] = Double.parseDouble(coords[3]);
+    }
+
     public BoundingBox(double swlon, double swlat, double nelon, double nelat) {
         this(new double[] { swlon, swlat }, new double[] { nelon, nelat });
     }

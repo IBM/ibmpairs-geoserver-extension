@@ -1,18 +1,19 @@
-package com.ibm.pa.pairs.geoserver.plugin.hbase;
+package com.ibm.pa.utils;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -20,6 +21,10 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.BoundingBox;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.ImageDescriptor;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsGeoserverExtensionConfig;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsWMSQueryParam;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -32,12 +37,12 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 public class PairsUtilities {
     public static Logger logger = Logger.getLogger(PairsUtilities.class.getName());
+    public static final DateTimeFormatter DEFAULT_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy MM dd HH:mm");
     public static String DFORMAT = "%.4f";
     public static String IFORMAT = "%d";
     public static String LFORMAT = "%d";
@@ -302,7 +307,59 @@ public class PairsUtilities {
     }
 
     /**
-     * Image testing
+     * ******************************* time manipulation
+     ***********************************/
+
+    /**
+     * Notes: hyphen "-" or space accepted delimiter
+     * 
+     * if timeString is one number > 4 chars its assumed to be epoch secs and
+     * converted to long
+     * 
+     * if timeString is null use current time
+     * 
+     * @param timeString yyyy-mm-dd-HH:mm:ss
+     */
+    public static Long toEpochSec(String timeString) {
+        Long result = null;
+        ZoneOffset offset = ZoneOffset.ofHours(0);
+
+        if (timeString == null)
+            return null;
+
+        String input = timeString.replace("-", " ");
+
+        if (!input.contains(" ")) {
+            result = Long.valueOf(input);
+        } else {
+            if (!input.contains(":"))
+                input += " 00:00";
+            LocalDateTime localDateTime = LocalDateTime.parse(input, DEFAULT_DATE_TIME_FORMATTER);
+            result = localDateTime.toEpochSecond(offset);
+        }
+
+        return result;
+    }
+
+    public static String toEpochSecString(String timeString) {
+        Long epochSecs = toEpochSec(timeString);
+        if (epochSecs == null)
+            return null;
+        else
+            return epochSecs.toString();
+    }
+
+    public static String currentTimeAsString() {
+        return DEFAULT_DATE_TIME_FORMATTER.format(LocalDateTime.now());
+    }
+
+    public static String currentTimeEpochSec() {
+        ZoneOffset offset = ZoneOffset.ofHours(0);
+        return Long.toString(LocalDateTime.now().toEpochSecond(offset));
+    }
+
+    /**
+     * ******************************** Image testing
      */
     public static BufferedImage getTestImageIntRGB(int w, int h) {
         BufferedImage result = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
