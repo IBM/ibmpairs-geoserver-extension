@@ -92,12 +92,11 @@ public class PairsLayerRequestType implements com.ibm.pa.utils.JsonSerializable 
     public String toJson() {
         String result = serialize();
         return result;
-    } 
+    }
 
-    /**
+    /*************************************
      * Utility classes
-     */
-
+     *************************************/
     public static class PairsLayerWrapper {
         public PairsLayerRequestType[] layers;
     }

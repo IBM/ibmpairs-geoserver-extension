@@ -1,8 +1,5 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class PairsRasterRequest {
     private final PairsLayerRequestType pairsLayer;
     private final ImageDescriptor requestedImageDescriptor;
@@ -15,15 +12,28 @@ public class PairsRasterRequest {
         this.ibmpairsquery = pairsLayer.toJson();
     }
 
-    public static List<PairsRasterRequest> generateRequestForEachLayer(PairsWMSQueryParam queryParam) {
-        List<PairsRasterRequest> result = new ArrayList<>();
-        ImageDescriptor requestedImageDescriptor = queryParam.getRequestImageDescriptor();
-
-        for (PairsLayerRequestType plrt : queryParam.getLayers()) {
-            PairsRasterRequest rasterRequest = new PairsRasterRequest(plrt, requestedImageDescriptor);
-            result.add(rasterRequest);
-        }
-
-        return result;
+    public PairsLayerRequestType getPairsLayer() {
+        return this.pairsLayer;
     }
+
+    public ImageDescriptor getRequestedImageDescriptor() {
+        return this.requestedImageDescriptor;
+    }
+
+    public String getStatistic() {
+        return this.statistic;
+    }
+
+    public void setStatistic(String statistic) {
+        this.statistic = statistic;
+    }
+
+    public String getIbmpairsquery() {
+        return this.ibmpairsquery;
+    }
+
+    public void setIbmpairsquery(String ibmpairsquery) {
+        this.ibmpairsquery = ibmpairsquery;
+    }
+
 }

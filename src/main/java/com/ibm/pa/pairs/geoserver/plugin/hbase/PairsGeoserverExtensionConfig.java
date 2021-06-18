@@ -27,14 +27,19 @@ public class PairsGeoserverExtensionConfig {
     public static String BUFFERED_IMAGE = "bufferedImage";
 
     // Pairs Http header names and query string key options from client
-    public static String PAIRS_HEADER_KEY = "ibmpairs";
-    public static String PAIRS_QUERY_STRING_KEY_PREFIX = "ibmpairs";
-    public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid";
-    public static String PAIRS_QUERY_KEY_LAYERID2 = PAIRS_QUERY_STRING_KEY_PREFIX + "_layerid2";
-    public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_timestamp";
-    public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_statistic";
-    public static String PAIRS_QUERY_KEY_DIMENSION = PAIRS_QUERY_STRING_KEY_PREFIX + "_dimension";
-    public static String PAIRS_QUERY_KEY_DIMENSION_VALUE = PAIRS_QUERY_STRING_KEY_PREFIX + "_dimension_value";
+    public static String PAIRS_HEADER_KEY = "IBMPAIRS";
+    public static String PAIRS_QUERY_STRING_KEY_PREFIX = "IBMPAIRS";
+    public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_STATISTIC";
+    public static String PAIRS_LAYER_QUERY_JSON = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYERQUERY";
+
+    
+    // Deprecated June 2021, Replace all layer info with pairs core query JSON format in param IBMPAIRSLAYER
+    
+    public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYERID";
+    public static String PAIRS_QUERY_KEY_LAYERID2 = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYERID2";
+    public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_TIMESTAMP";
+    public static String PAIRS_QUERY_KEY_DIMENSION = PAIRS_QUERY_STRING_KEY_PREFIX + "_DIMENSION";
+    public static String PAIRS_QUERY_KEY_DIMENSION_VALUE = PAIRS_QUERY_STRING_KEY_PREFIX + "_DIMENSION_VALUE";
 
     /**
      * Dynamically configurable items

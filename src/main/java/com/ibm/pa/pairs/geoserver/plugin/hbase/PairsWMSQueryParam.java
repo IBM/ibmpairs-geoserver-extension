@@ -1,14 +1,15 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ibm.pa.utils.HttpRequestParameterMap;
 import com.ibm.pa.utils.JsonSerializable;
-import com.ibm.pa.utils.PairsUtilities;
 
 /**
  * Return the query value contained in the threadlocal query string TODO Its
@@ -21,12 +22,10 @@ import com.ibm.pa.utils.PairsUtilities;
  * 
  */
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, value = { "paramMap" })
 public class PairsWMSQueryParam implements JsonSerializable {
     static final Logger logger = Logger.getLogger(PairsWMSQueryParam.class.getName());
-    String service;
-    String version;
-    String request;
+    HttpRequestParameterMap paramMap;
     String statistic;
     int level = -1;
     String crs;
@@ -34,35 +33,36 @@ public class PairsWMSQueryParam implements JsonSerializable {
     PairsLayerRequestType[] layers;
     ImageDescriptor requestImageDescriptor;
 
-    public PairsWMSQueryParam(Map<String, Object> kvp, Map<String, String[]> httpRequestParamMap) throws Exception {
+    public PairsWMSQueryParam(final HttpRequestParameterMap paramMap) throws Exception {
         Map<String, String> invalidParams;
+        this.paramMap = paramMap;
 
-        invalidParams = validateParams(kvp);
+        invalidParams = validateParams(paramMap);
         if (!invalidParams.isEmpty())
             throw new IllegalArgumentException(invalidParams.toString());
 
-        setStatistic((String) kvp.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
-        setCrs((String) kvp.get("CRS"));
+        setStatistic(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
+        setCrs(paramMap.get("CRS"));
+        setIbmpairslayer(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_LAYER_QUERY_JSON));
+        layers = PairsLayerRequestType.buildFromJson(ibmpairslayer);
 
-        // Build the request image descriptor
-        String bboxStr = (String) kvp.get("BBOX");
-        StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
-        double swlat = Double.parseDouble(bboxTkn.nextToken());
-        double swlon = Double.parseDouble(bboxTkn.nextToken());
-        double nelat = Double.parseDouble(bboxTkn.nextToken());
-        double nelon = Double.parseDouble(bboxTkn.nextToken());
-        int height = Integer.parseInt((String) kvp.get("HEIGHT"));
-        int width = Integer.parseInt((String) kvp.get("WIDTH"));
-        BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
-        setRequestImageDescriptor(new ImageDescriptor(bbox, height, width));
-
-        // Build the requested layers
-        layers = createRequestlayers(ibmpairslayer);
+        setRequestImageDescriptor(buildRequestImageDescriptor());
     }
 
-    public static PairsWMSQueryParam buildPairsWMSQueryParam() {
+    /**
+     * Note, the optionalParams can be used to be backwards compatible with a query
+     * that provides a IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID instead of
+     * IBMPAIRS__LAYERQUERY by build the json from the later from the former and
+     * inserting the parameter into the optionalParams.
+     * 
+     * 
+     * @param optionalParams - Used to add parameters if not on request,
+     * @return
+     * @throws Exception
+     */
+    public static PairsWMSQueryParam buildPairsWMSQueryParam(Map<String, String[]> optionalParams) throws Exception {
         Map<String, Object> kvp = null;
-        Map<String, String[]> httpRequestParamMap = null;
+        HttpRequestParameterMap paramMap = null;
 
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
         if (req == null) {
@@ -73,18 +73,39 @@ public class PairsWMSQueryParam implements JsonSerializable {
             return null;
         }
 
-        httpRequestParamMap = req.getHttpRequest().getParameterMap();
+        paramMap = new HttpRequestParameterMap(req.getHttpRequest().getParameterMap());
         kvp = req.getRawKvp();
-        PairsWMSQueryParam result = new PairsWMSQueryParam(kvp, httpRequestParamMap);
+        PairsWMSQueryParam result = new PairsWMSQueryParam(paramMap);
         return result;
     }
 
-    private PairsLayerRequestType[] createRequestlayers(String json) throws Exception {
-        PairsLayerRequestType[] layers = PairsLayerRequestType.buildFromJson(json);
-        return layers;
+    private ImageDescriptor buildRequestImageDescriptor() {
+        String bboxStr = paramMap.get("BBOX");
+        StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
+        double swlat = Double.parseDouble(bboxTkn.nextToken());
+        double swlon = Double.parseDouble(bboxTkn.nextToken());
+        double nelat = Double.parseDouble(bboxTkn.nextToken());
+        double nelon = Double.parseDouble(bboxTkn.nextToken());
+        int height = Integer.parseInt((String) paramMap.get("HEIGHT"));
+        int width = Integer.parseInt((String) paramMap.get("WIDTH"));
+        BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
+
+        return new ImageDescriptor(bbox, height, width);
     }
 
-    public Map<String, String> validateParams(Map<String, Object> params) {
+    public List<PairsRasterRequest> generateRequestForEachLayer() {
+        List<PairsRasterRequest> result = new ArrayList<>();
+        ImageDescriptor requestedImageDescriptor = requestImageDescriptor;
+
+        for (PairsLayerRequestType plrt : layers) {
+            PairsRasterRequest rasterRequest = new PairsRasterRequest(plrt, requestedImageDescriptor);
+            result.add(rasterRequest);
+        }
+
+        return result;
+    }
+
+    public Map<String, String> validateParams(Map<String, String[]> params) {
         Map<String, String> invalidParams = new HashMap<>();
         return invalidParams;
     }
@@ -134,5 +155,13 @@ public class PairsWMSQueryParam implements JsonSerializable {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    public String getIbmpairslayer() {
+        return this.ibmpairslayer;
+    }
+
+    public void setIbmpairslayer(String ibmpairslayer) {
+        this.ibmpairslayer = ibmpairslayer;
     }
 }
