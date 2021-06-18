@@ -27,7 +27,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
     static final Logger logger = Logger.getLogger(PairsWMSQueryParam.class.getName());
     HttpRequestParameterMap paramMap;
     String statistic;
-    int level = -1;
+    Integer level = -1;
     String crs;
     String ibmpairslayer;
     PairsLayerRequestType[] layers;

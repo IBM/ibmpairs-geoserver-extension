@@ -75,49 +75,6 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     TiledImage tiledImage;
     GridCoverage2D gridCoverage2D;
 
-    /**
-     * Convenience method for getting rasters and building a multi-band coverage
-     * 
-     * todo: this could be concurrent operation to fetch the data
-     * 
-     * @param queryParams
-     * @param coverageReader
-     * @return
-     * @throws Exception
-     */
-    public static GridCoverage2D buildGridCoverage2D(PairsWMSQueryParam queryParams, PairsCoverageReader coverageReader)
-            throws Exception {
-        GridCoverage2D gridCoverage2D = null;
-        List<PairsRasterRequest> pairsRasterReqs = queryParams.generateRequestForEachLayer();
-        int nbands = pairsRasterReqs.size();
-        List<PairsQueryCoverageJob> pairsQueryCoverageJobs = new ArrayList<>(nbands);
-        float[][] imageData = new float[nbands][];
-        int width, height;
-
-        // Retrieve the data from pairsdataservice
-        for (PairsRasterRequest req : pairsRasterReqs) {
-            PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, req, coverageReader, true);
-            pairsQueryCoverageJobs.add(pqcj);
-            pqcj.call();
-        }
-
-        for (int i = 0; i < nbands; i++)
-            imageData[i] = pairsQueryCoverageJobs.get(i).getImageDataFloat();
-
-        // todo: add some checks in here, height, width should be same for all bands
-        width = pairsQueryCoverageJobs.get(0).getResponseImageDescriptor().getWidth();
-        height = pairsQueryCoverageJobs.get(0).getResponseImageDescriptor().getHeight();
-        javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
-        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 2);
-        java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
-                new Point(0, 0));
-
-        gridCoverage2D = coverageReader.getGridCoverageFactory().create(pairsQueryCoverageJobs.get(0).getCoverageName(),
-                writableRaster, pairsQueryCoverageJobs.get(0).getResponseEnvelope2D());
-
-        return gridCoverage2D;
-    }
-
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsRasterRequest pairsRasterRequest,
             PairsCoverageReader coverageReader, Boolean dataBufferOnly) {
         this.queryParams = queryParams;
@@ -128,7 +85,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
     @Override
     public GridCoverage2D call() throws Exception {
-        getDataFromPairsDataService(layerId);
+        getDataFromPairsDataService(pairsRasterRequest);
         if (dataBufferOnly)
             return null;
 
@@ -138,9 +95,9 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return gridCoverage2D;
     }
 
-    public void getDataFromPairsDataService(Integer layerId)
+    public void getDataFromPairsDataService(PairsRasterRequest rasterRequest)
             throws ClientProtocolException, URISyntaxException, IOException {
-        HttpResponse response = getHttpResponseFromPairsDataService(layerId);
+        HttpResponse response = getHttpResponseFromPairsDataService(rasterRequest);
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
@@ -220,7 +177,45 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return result;
     }
 
-    private HttpResponse getHttpResponseFromPairsDataService(Integer layerId)
+    private HttpResponse getHttpResponseFromPairsDataService(PairsRasterRequest rasterRequest)
+            throws URISyntaxException, ClientProtocolException, IOException {
+        ImageDescriptor imageDescriptor = queryParams.getRequestImageDescriptor();
+        HttpResponse response = null;
+
+        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
+                + "dataquery/" + "layer/raster");
+
+        builder.setParameter("LEVEL", Integer.toString(queryParams.getLevel()))
+                .setParameter("STATISTIC", queryParams.getStatistic())
+                .setParameter("WIDTH", Integer.toString(imageDescriptor.getWidth()))
+                .setParameter("HEIGHT", Integer.toString(imageDescriptor.getHeight()))
+                .setParameter("BBOX", imageDescriptor.getBoundingBox().toString())
+                .setParameter("IBMPAIRSLAYER", rasterRequest.getIbmpairsquery());
+
+        HttpGet request = new HttpGet(builder.build());
+        request.addHeader("accepts", "application/binary");
+
+        CredentialsProvider provider = new BasicCredentialsProvider();
+        provider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceUid(),
+                        PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
+
+        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+        response = httpClient.execute(request);
+
+        return response;
+    }
+
+    /**
+     * Deprecated
+     * 
+     * @param layerId
+     * @return
+     * @throws URISyntaxException
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    private HttpResponse getHttpResponseFromPairsDataService_deprecate(Integer layerId)
             throws URISyntaxException, ClientProtocolException, IOException {
         ImageDescriptor imageDescriptor = queryParams.getRequestImageDescriptor();
         HttpResponse response = null;
@@ -277,11 +272,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     }
 
     public Integer getLayerId() {
-        return layerId;
-    }
-
-    public void setLayerId(Integer layerId) {
-        this.layerId = layerId;
+        return pairsRasterRequest.getPairsLayer().getId();
     }
 
     public Boolean getDataBufferOnly() {
