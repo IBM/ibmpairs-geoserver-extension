@@ -180,7 +180,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     public static final Logger logger = Logger.getLogger(PairsCoverageReader.class.getName());
     public static int GRID_WIDTH = 512;
     public static int GRID_HEIGHT = 256;
-    PairsWMSQueryParam httpRequestParams;
+    PairsWMSQueryParam pairsWMSQueryParams;
     double pairsPixelResolution = -1;
 
     /*
@@ -190,20 +190,19 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
      * @throws NoSuchAuthorityCodeException
      * 
      */
-    public PairsCoverageReader(Object input, Hints uHints) throws NoSuchAuthorityCodeException, FactoryException,
-            ClientProtocolException, URISyntaxException, IOException {
+    public PairsCoverageReader(Object input, Hints uHints) throws Exception {
         super(input, uHints);
         coverageName = input.toString();
         crs = CRS.decode("EPSG:4326");
 
-        httpRequestParams = PairsWMSQueryParam.getRequestQueryStringParameter();
-        if (httpRequestParams != null) {
+        pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+        if (pairsWMSQueryParams != null) {
             pairsPixelResolution = getPairsPixelResolution();
             originalEnvelope = getPairsOriginalEnvelope();
             originalGridRange = getPairsOriginalGridRange();
             setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
-            if (httpRequestParams.getCrs() != null)
-                crs = CRS.decode(httpRequestParams.getCrs());
+            if (pairsWMSQueryParams.getCrs() != null)
+                crs = CRS.decode(pairsWMSQueryParams.getCrs());
         } else {
             originalEnvelope = getMyOriginalEnvelope(); // temporary fix
             originalGridRange = getMyOriginalGridRange(); // temporary fix
@@ -265,23 +264,22 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     }
 
     /**
-     * Number of coverages for this reader is 1.
-     * 
-     * For multi-layer request this will become the number parsed from the input
-     * parameters.
+     * I think for multi-layer request this will become the number of bands parsed
+     * from the input parameters. Not sure, will have to test
      *
      * @return the number of coverages for this reader.
      */
     @Override
     public int getGridCoverageCount() {
-        return 1;
+        Integer num = pairsWMSQueryParams.getLayers().length;
+        return num;
     }
 
     private Double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
         // return 0.000064;
-        ImageDescriptor imageDescriptor = httpRequestParams.getRequestImageDescriptor();
-        int layerId = this.httpRequestParams.getLayerid();
-        String statistic = this.httpRequestParams.getStatistic();
+        ImageDescriptor imageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
+        int layerId = this.pairsWMSQueryParams.getLayers()[0].getId();
+        String statistic = this.pairsWMSQueryParams.getStatistic();
         return PairsUtilities.getPairsResolution(layerId, statistic, imageDescriptor);
     }
 
@@ -311,13 +309,13 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     GeneralEnvelope getPairsOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
         GeneralEnvelope result = null;
 
-        double lonSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getWidth();
-        double latSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        double lonSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
         int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
         int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
         lonSpan = xSpan * this.pairsPixelResolution;
         latSpan = ySpan * this.pairsPixelResolution;
-        double[] swLonLat = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getSwLonLat();
+        double[] swLonLat = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getSwLonLat();
         double[] nelonLat = { swLonLat[0] + lonSpan, swLonLat[1] + latSpan };
 
         result = new GeneralEnvelope(swLonLat, nelonLat);
@@ -335,8 +333,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     GridEnvelope getPairsOriginalGridRange() {
         GeneralGridEnvelope result = null;
 
-        double lonSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getWidth();
-        double latSpan = httpRequestParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        double lonSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
         int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
         int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
 
@@ -362,6 +360,10 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         ImageIO io;
         ImageIOExt ioe;
 
+        /**
+         * NOTE: NB May need to update the pairsWMSQueryParams created during construction depending on the envelope Param[] passed
+         * to the read(Params...) is different from BBOX.
+         */
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
                 final ParameterValue param = (ParameterValue) params[i];
@@ -444,12 +446,10 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             return gridCoverage2D;
         }
 
-        PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.getRequestQueryStringParameter();
-        requestImageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
-        logger.info("Request ImageDescriptor: " + requestImageDescriptor.toString());
-
         try {
-            gridCoverage2D = PairsQueryCoverageJob.buildGridCoverage2D(pairsWMSQueryParams, this);
+            //  pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+            logger.info("Request ImageDescriptor: " + pairsWMSQueryParams.toString());
+            gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsWMSQueryParams, this);
             // PairsQueryCoverageJob pairsQueryCoverageJob = new
             // PairsQueryCoverageJob(pairsWMSQueryParams, this);
             // gridCoverage2D = pairsQueryCoverageJob.call();

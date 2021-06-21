@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.BoundingBox;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.ImageDescriptor;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsGeoserverExtensionConfig;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsRasterRequest;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsWMSQueryParam;
 
 import org.apache.http.Header;
@@ -82,42 +83,20 @@ public class PairsUtilities {
         logger.info("resolution: " + r);
     }
 
-    /**
-     * Deprecated March 2021, replace by methods in class PairsQueryCoverageJob, see
-     * public void getDataFromPairsDataService(Integer layerId).
-     * 
-     * Build uri to return a raster from pairs-data-service:
-     * 
-     * "http://pairs.res.ibm.com:8080/api/v1/dataquery?layerid=49180&timestamp=1435708800&
-     * swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256";
-     * 
-     * @return
-     * @throws IOException
-     * @throws ClientProtocolException
-     * @throws URISyntaxException
-     */
-    public static HttpResponse getRasterFromPairsDataService(PairsWMSQueryParam queryParams,
-            ImageDescriptor imageDescriptor) throws ClientProtocolException, IOException, URISyntaxException {
+    public static HttpResponse getHttpResponseFromPairsDataService(PairsRasterRequest rasterRequest)
+            throws URISyntaxException, ClientProtocolException, IOException {
+        ImageDescriptor imageDescriptor = rasterRequest.getRequestImageDescriptor();
         HttpResponse response = null;
 
-        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
-                + "dataquery/" + "layer/" + queryParams.getLayerid() + "/raster");
+        URIBuilder builder = new URIBuilder(
+                PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl() + "dataquery/layer/raster");
 
-        builder.setParameter("timestamp", Long.toString(queryParams.getTimestamp()))
-                .setParameter("level", Integer.toString(queryParams.getLevel()))
-                .setParameter("statistic", queryParams.getStatistic())
-                .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
-                .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
-                .setParameter("swlon", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[0]))
-                .setParameter("swlat", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[1]))
-                .setParameter("nelon", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[0]))
-                .setParameter("nelat", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[1]));
-
-        if ((queryParams.getDimension() != null && !queryParams.getDimension().isEmpty())
-                && (queryParams.getDimensionValue() != null && !queryParams.getDimensionValue().isEmpty())) {
-            builder.addParameter("dimension", queryParams.getDimension());
-            builder.addParameter("dimensionvalue", queryParams.getDimensionValue());
-        }
+        builder.setParameter("LEVEL", Integer.toString(rasterRequest.getPairsLayer().getPixelLevel()))
+                .setParameter("STATISTIC", rasterRequest.getStatistic())
+                .setParameter("WIDTH", Integer.toString(imageDescriptor.getWidth()))
+                .setParameter("HEIGHT", Integer.toString(imageDescriptor.getHeight()))
+                .setParameter("BBOX", imageDescriptor.getBoundingBox().toString())
+                .setParameter("IBMPAIRSLAYER", rasterRequest.getIbmpairsquery());
 
         HttpGet request = new HttpGet(builder.build());
         request.addHeader("accepts", "application/binary");
@@ -132,6 +111,65 @@ public class PairsUtilities {
 
         return response;
     }
+
+    /**
+     * Deprecated March 2021, replace by methods in class PairsQueryCoverageJob, see
+     * public void getDataFromPairsDataService(Integer layerId).
+     * 
+     * Build uri to return a raster from pairs-data-service:
+     * 
+     * "http://pairs.res.ibm.com:8080/api/v1/dataquery?layerid=49180&timestamp=1435708800&
+     * swlat=30.0&swlon=-80.0&nelat=40.712&nelon=-70.0060&height=128&width=256";
+     * 
+     * @return
+     * @throws IOException
+     * @throws ClientProtocolException
+     * @throws URISyntaxException
+     */
+    /*
+     * public static HttpResponse getRasterFromPairsDataService(PairsWMSQueryParam
+     * queryParams, ImageDescriptor imageDescriptor) throws ClientProtocolException,
+     * IOException, URISyntaxException { HttpResponse response = null;
+     * 
+     * URIBuilder builder = new
+     * URIBuilder(PairsGeoserverExtensionConfig.getInstance().
+     * getPairsDataServiceBaseUrl() + "dataquery/" + "layer/" +
+     * queryParams.getLayerid() + "/raster");
+     * 
+     * builder.setParameter("timestamp", Long.toString(queryParams.getTimestamp()))
+     * .setParameter("level", Integer.toString(queryParams.getLevel()))
+     * .setParameter("statistic", queryParams.getStatistic()) .setParameter("width",
+     * Integer.toString(imageDescriptor.getWidth())) .setParameter("height",
+     * Integer.toString(imageDescriptor.getHeight())) .setParameter("swlon",
+     * Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[0]))
+     * .setParameter("swlat",
+     * Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[1]))
+     * .setParameter("nelon",
+     * Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[0]))
+     * .setParameter("nelat",
+     * Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[1]));
+     * 
+     * if ((queryParams.getDimension() != null &&
+     * !queryParams.getDimension().isEmpty()) && (queryParams.getDimensionValue() !=
+     * null && !queryParams.getDimensionValue().isEmpty())) {
+     * builder.addParameter("dimension", queryParams.getDimension());
+     * builder.addParameter("dimensionvalue", queryParams.getDimensionValue()); }
+     * 
+     * HttpGet request = new HttpGet(builder.build()); request.addHeader("accepts",
+     * "application/binary");
+     * 
+     * CredentialsProvider provider = new BasicCredentialsProvider();
+     * provider.setCredentials(AuthScope.ANY, new
+     * UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().
+     * getPairsDataServiceUid(),
+     * PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
+     * 
+     * HttpClient httpClient =
+     * HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
+     * response = httpClient.execute(request);
+     * 
+     * return response; }
+     */
 
     public static Double getPairsResolution(int layerId, String statistic, ImageDescriptor imageDescriptor)
             throws ClientProtocolException, IOException, URISyntaxException {

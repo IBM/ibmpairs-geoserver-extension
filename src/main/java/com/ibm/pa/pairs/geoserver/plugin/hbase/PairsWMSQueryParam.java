@@ -52,8 +52,10 @@ public class PairsWMSQueryParam implements JsonSerializable {
     /**
      * Note, the optionalParams can be used to be backwards compatible with a query
      * that provides a IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID instead of
-     * IBMPAIRS__LAYERQUERY by build the json from the later from the former and
-     * inserting the parameter into the optionalParams.
+     * IBMPAIRS__LAYERQUERY. In this case, build the json for IBMPAIRSLAYER paramter from the
+     * IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID and replace them in paramMap.
+     * 
+     * todo: add optional parameters
      * 
      * 
      * @param optionalParams - Used to add parameters if not on request,
@@ -123,6 +125,10 @@ public class PairsWMSQueryParam implements JsonSerializable {
 
     public PairsLayerRequestType[] getLayers() {
         return this.layers;
+    }
+
+    public PairsLayerRequestType getLayer(int i) {
+        return this.layers[i];
     }
 
     public String getStatistic() {

@@ -2,6 +2,7 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.awt.Point;
 import java.awt.image.*;
 
@@ -15,6 +16,7 @@ import org.geotools.coverage.grid.GridCoverage2D;
  * Convenience methods from building coverage and coverage components
  */
 public class PairsCoverageFactory {
+    private static final Logger logger = org.geotools.util.logging.Logging.getLogger(PairsCoverageFactory.class);
 
     /**
      * Gets raster data and build a multi-band coverage

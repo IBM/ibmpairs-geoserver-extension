@@ -3,7 +3,7 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Encapsulates information return to client as JSON in the X-PAIRS-DATA header
+ * Encapsulates envelope and grid information. Also returned to client as JSON in the X-PAIRS-DATA header
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ImageDescriptor {

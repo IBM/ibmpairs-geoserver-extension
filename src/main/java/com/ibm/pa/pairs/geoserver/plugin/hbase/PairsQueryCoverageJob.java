@@ -97,7 +97,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
     public void getDataFromPairsDataService(PairsRasterRequest rasterRequest)
             throws ClientProtocolException, URISyntaxException, IOException {
-        HttpResponse response = getHttpResponseFromPairsDataService(rasterRequest);
+        HttpResponse response = PairsUtilities.getHttpResponseFromPairsDataService(rasterRequest);
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
@@ -175,82 +175,6 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         // responseEnvelope2D);
 
         return result;
-    }
-
-    private HttpResponse getHttpResponseFromPairsDataService(PairsRasterRequest rasterRequest)
-            throws URISyntaxException, ClientProtocolException, IOException {
-        ImageDescriptor imageDescriptor = queryParams.getRequestImageDescriptor();
-        HttpResponse response = null;
-
-        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
-                + "dataquery/" + "layer/raster");
-
-        builder.setParameter("LEVEL", Integer.toString(queryParams.getLevel()))
-                .setParameter("STATISTIC", queryParams.getStatistic())
-                .setParameter("WIDTH", Integer.toString(imageDescriptor.getWidth()))
-                .setParameter("HEIGHT", Integer.toString(imageDescriptor.getHeight()))
-                .setParameter("BBOX", imageDescriptor.getBoundingBox().toString())
-                .setParameter("IBMPAIRSLAYER", rasterRequest.getIbmpairsquery());
-
-        HttpGet request = new HttpGet(builder.build());
-        request.addHeader("accepts", "application/binary");
-
-        CredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceUid(),
-                        PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
-
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-        response = httpClient.execute(request);
-
-        return response;
-    }
-
-    /**
-     * Deprecated
-     * 
-     * @param layerId
-     * @return
-     * @throws URISyntaxException
-     * @throws ClientProtocolException
-     * @throws IOException
-     */
-    private HttpResponse getHttpResponseFromPairsDataService_deprecate(Integer layerId)
-            throws URISyntaxException, ClientProtocolException, IOException {
-        ImageDescriptor imageDescriptor = queryParams.getRequestImageDescriptor();
-        HttpResponse response = null;
-
-        URIBuilder builder = new URIBuilder(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl()
-                + "dataquery/" + "layer/" + layerId + "/raster");
-
-        builder.setParameter("timestamp", Long.toString(queryParams.getTimestamp()))
-                .setParameter("level", Integer.toString(queryParams.getLevel()))
-                .setParameter("statistic", queryParams.getStatistic())
-                .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
-                .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
-                .setParameter("swlon", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[0]))
-                .setParameter("swlat", Double.toString(imageDescriptor.getBoundingBox().getSwLonLat()[1]))
-                .setParameter("nelon", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[0]))
-                .setParameter("nelat", Double.toString(imageDescriptor.getBoundingBox().getNeLonLat()[1]));
-
-        if ((queryParams.getDimension() != null && !queryParams.getDimension().isEmpty())
-                && (queryParams.getDimensionValue() != null && !queryParams.getDimensionValue().isEmpty())) {
-            builder.addParameter("dimension", queryParams.getDimension());
-            builder.addParameter("dimensionvalue", queryParams.getDimensionValue());
-        }
-
-        HttpGet request = new HttpGet(builder.build());
-        request.addHeader("accepts", "application/binary");
-
-        CredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceUid(),
-                        PairsGeoserverExtensionConfig.getInstance().getPairsDataServicePw()));
-
-        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-        response = httpClient.execute(request);
-
-        return response;
     }
 
     /**

@@ -2,13 +2,13 @@ package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 public class PairsRasterRequest {
     private final PairsLayerRequestType pairsLayer;
-    private final ImageDescriptor requestedImageDescriptor;
+    private final ImageDescriptor requestImageDescriptor;
     private String statistic = "";
     private String ibmpairsquery;
 
     public PairsRasterRequest(PairsLayerRequestType pairsLayer, ImageDescriptor requestedImageDescriptor) {
         this.pairsLayer = pairsLayer;
-        this.requestedImageDescriptor = requestedImageDescriptor;
+        this.requestImageDescriptor = requestedImageDescriptor;
         this.ibmpairsquery = pairsLayer.toJson();
     }
 
@@ -16,8 +16,8 @@ public class PairsRasterRequest {
         return this.pairsLayer;
     }
 
-    public ImageDescriptor getRequestedImageDescriptor() {
-        return this.requestedImageDescriptor;
+    public ImageDescriptor getRequestImageDescriptor() {
+        return this.requestImageDescriptor;
     }
 
     public String getStatistic() {
