@@ -8,7 +8,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.ibm.pa.utils.HttpRequestParameterMap;
+import com.ibm.pa.utils.PairsHttpRequestParamMap;
 import com.ibm.pa.utils.JsonSerializable;
 
 /**
@@ -25,7 +25,7 @@ import com.ibm.pa.utils.JsonSerializable;
 @JsonIgnoreProperties(ignoreUnknown = true, value = { "paramMap" })
 public class PairsWMSQueryParam implements JsonSerializable {
     static final Logger logger = Logger.getLogger(PairsWMSQueryParam.class.getName());
-    HttpRequestParameterMap paramMap;
+    PairsHttpRequestParamMap paramMap;
     String statistic;
     Integer level = -1;
     String crs;
@@ -33,7 +33,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
     PairsLayerRequestType[] layers;
     ImageDescriptor requestImageDescriptor;
 
-    public PairsWMSQueryParam(final HttpRequestParameterMap paramMap) throws Exception {
+    public PairsWMSQueryParam(final PairsHttpRequestParamMap paramMap) throws Exception {
         Map<String, String> invalidParams;
         this.paramMap = paramMap;
 
@@ -64,7 +64,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
      */
     public static PairsWMSQueryParam buildPairsWMSQueryParam(Map<String, String[]> optionalParams) throws Exception {
         Map<String, Object> kvp = null;
-        HttpRequestParameterMap paramMap = null;
+        PairsHttpRequestParamMap paramMap = null;
 
         org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
         if (req == null) {
@@ -75,7 +75,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
             return null;
         }
 
-        paramMap = new HttpRequestParameterMap(req.getHttpRequest().getParameterMap());
+        paramMap = new PairsHttpRequestParamMap(req.getHttpRequest().getParameterMap());
         kvp = req.getRawKvp();
         PairsWMSQueryParam result = new PairsWMSQueryParam(paramMap);
         return result;
