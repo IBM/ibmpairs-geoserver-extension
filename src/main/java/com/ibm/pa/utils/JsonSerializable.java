@@ -24,7 +24,7 @@ public interface JsonSerializable {
         return result;
     }
 
-    default <T> T deserializeInstance(String json, Class<T> targetClass)
+    default <T> T deserialize(String json, Class<T> targetClass)
             throws JsonParseException, JsonMappingException, IOException {
         T instance = null;
 
@@ -34,7 +34,7 @@ public interface JsonSerializable {
         return instance;
     }
 
-    static <T> T deserialize(String json, Class<T> targetClass)
+    static <T> T deserializeStatic(String json, Class<T> targetClass)
             throws JsonMappingException, JsonProcessingException {
         T instance = null;
 

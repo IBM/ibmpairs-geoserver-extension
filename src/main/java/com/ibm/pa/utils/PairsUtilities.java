@@ -91,12 +91,12 @@ public class PairsUtilities {
         URIBuilder builder = new URIBuilder(
                 PairsGeoserverExtensionConfig.getInstance().getPairsDataServiceBaseUrl() + "dataquery/layer/raster");
 
-        builder.setParameter("LEVEL", Integer.toString(rasterRequest.getPairsLayer().getPixelLevel()))
-                .setParameter("STATISTIC", rasterRequest.getStatistic())
-                .setParameter("WIDTH", Integer.toString(imageDescriptor.getWidth()))
-                .setParameter("HEIGHT", Integer.toString(imageDescriptor.getHeight()))
-                .setParameter("BBOX", imageDescriptor.getBoundingBox().toQueryParam())
-                .setParameter("IBMPAIRSLAYER", rasterRequest.getIbmpairsquery());
+        builder.setParameter("level", Integer.toString(rasterRequest.getPairsLayer().getPixelLevel()))
+                .setParameter("statistic", rasterRequest.getStatistic())
+                .setParameter("width", Integer.toString(imageDescriptor.getWidth()))
+                .setParameter("height", Integer.toString(imageDescriptor.getHeight()))
+                .setParameter("bbox", imageDescriptor.getBoundingBox().toQueryParam())
+                .setParameter("ibmpairslayer", rasterRequest.getIbmpairsquery());
 
         HttpGet request = new HttpGet(builder.build());
         request.addHeader("accepts", "application/binary");

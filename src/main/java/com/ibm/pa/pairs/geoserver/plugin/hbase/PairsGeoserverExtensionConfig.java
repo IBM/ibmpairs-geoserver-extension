@@ -1,7 +1,6 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,8 +12,6 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.ibm.pa.utils.PairsUtilities;
-
-import org.apache.http.client.utils.URIBuilder;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PairsGeoserverExtensionConfig {
@@ -29,12 +26,11 @@ public class PairsGeoserverExtensionConfig {
     // Pairs Http header names and query string key options from client
     public static String PAIRS_HEADER_KEY = "IBMPAIRS";
     public static String PAIRS_QUERY_STRING_KEY_PREFIX = "IBMPAIRS";
-    public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "_STATISTIC";
-    public static String PAIRS_LAYER_JSON = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYER";
+    public static String PAIRS_QUERY_KEY_STATISTIC = PAIRS_QUERY_STRING_KEY_PREFIX + "STATISTIC";
+    public static String PAIRS_LAYER_JSON = PAIRS_QUERY_STRING_KEY_PREFIX + "LAYER";
 
-    
-    // Deprecated June 2021, Replace all layer info with pairs core query JSON format in param IBMPAIRSLAYER
-    
+    // Deprecated June 2021, Replace all layer info with pairs core query JSON
+    // format in param IBMPAIRSLAYER
     public static String PAIRS_QUERY_KEY_LAYERID = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYERID";
     public static String PAIRS_QUERY_KEY_LAYERID2 = PAIRS_QUERY_STRING_KEY_PREFIX + "_LAYERID2";
     public static String PAIRS_QUERY_KEY_TIMESTAMP = PAIRS_QUERY_STRING_KEY_PREFIX + "_TIMESTAMP";
@@ -105,8 +101,8 @@ public class PairsGeoserverExtensionConfig {
     }
 
     /**
-     * Verify the fields. Fix missing '/' this should be verified in
-     * routines using URL
+     * Verify the fields. Fix missing '/' this should be verified in routines using
+     * URL
      * 
      * @param instance
      */
