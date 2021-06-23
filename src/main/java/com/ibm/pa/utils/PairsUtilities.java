@@ -95,7 +95,7 @@ public class PairsUtilities {
                 .setParameter("STATISTIC", rasterRequest.getStatistic())
                 .setParameter("WIDTH", Integer.toString(imageDescriptor.getWidth()))
                 .setParameter("HEIGHT", Integer.toString(imageDescriptor.getHeight()))
-                .setParameter("BBOX", imageDescriptor.getBoundingBox().toString())
+                .setParameter("BBOX", imageDescriptor.getBoundingBox().toQueryParam())
                 .setParameter("IBMPAIRSLAYER", rasterRequest.getIbmpairsquery());
 
         HttpGet request = new HttpGet(builder.build());

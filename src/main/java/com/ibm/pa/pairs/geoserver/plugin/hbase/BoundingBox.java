@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class BoundingBox {
     private double[] boundingArray;
 
-    public BoundingBox(String bbox){
+    public BoundingBox(String bbox) {
         String[] coords = bbox.split(",");
         boundingArray[0] = Double.parseDouble(coords[0]);
         boundingArray[1] = Double.parseDouble(coords[1]);
@@ -28,7 +28,7 @@ public class BoundingBox {
         checkDimensions(boundingArray);
     }
 
-    public BoundingBox( final double[] boundingArray) {
+    public BoundingBox(final double[] boundingArray) {
         this.boundingArray = boundingArray;
     }
 
@@ -36,15 +36,15 @@ public class BoundingBox {
      * 'Default constructor' to make jackson object serialization work (double check
      * this someday)
      */
-    private BoundingBox() {       
+    private BoundingBox() {
     }
 
     /**
-     * Return this - tgt at each location 
+     * Return this - tgt at each location
      */
     public BoundingBox difference(BoundingBox tgt) {
         double[] diff = new double[4];
-        for( int i = 0; i < boundingArray.length; i++) {
+        for (int i = 0; i < boundingArray.length; i++) {
             diff[i] = boundingArray[i] - tgt.getBoundingArray()[i];
         }
         return new BoundingBox(diff);
@@ -74,13 +74,20 @@ public class BoundingBox {
         return getNeLonLat()[0] - getSwLonLat()[0];
     }
 
+    public String toQueryParam() {
+        String format = "%f,%f,%f,%f)";
+        String str = String.format(format, boundingArray[0], boundingArray[1], boundingArray[2], boundingArray[3]);
+        return str;
+    }
+
     public String toString() {
         String format = "SW(lon,lat): (%f, %f), NE(lon,lat): (%f, %f)";
         String str = String.format(format, boundingArray[0], boundingArray[1], boundingArray[2], boundingArray[3]);
         return str;
     }
 
-     // TODO: improve, currently somewhat fixes bounds, doesn't adjust. Should it throw
+    // TODO: improve, currently somewhat fixes bounds, doesn't adjust. Should it
+    // throw
     // errors?
     public static boolean checkDimensions(double[] bbox) {
         boolean result = true;
@@ -97,7 +104,7 @@ public class BoundingBox {
     }
 
     public static void main(String[] args) {
-        BoundingBox bb = new BoundingBox(new double[]{-181, -90}, new double[]{180, 95});
+        BoundingBox bb = new BoundingBox(new double[] { -181, -90 }, new double[] { 180, 95 });
         Arrays.toString(bb.getBoundingArray());
         BoundingBox.checkDimensions(bb.getBoundingArray());
         Arrays.toString(bb.getBoundingArray());

@@ -43,7 +43,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
 
         setStatistic(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
         setCrs(paramMap.get("CRS"));
-        setIbmpairslayer(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_LAYER_QUERY_JSON));
+        setIbmpairslayer(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_LAYER_JSON));
         layers = PairsLayerRequestType.buildFromJson(ibmpairslayer);
 
         setRequestImageDescriptor(buildRequestImageDescriptor());
