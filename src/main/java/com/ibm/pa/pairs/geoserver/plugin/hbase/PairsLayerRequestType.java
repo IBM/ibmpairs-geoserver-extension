@@ -38,10 +38,10 @@ public class PairsLayerRequestType implements com.ibm.pa.utils.JsonSerializable 
             throws Exception {
         this.id = layerId;
         this.pixelLevel = pixelLevel;
+        validatePixelLevel();
         String ts = PairsUtilities.toEpochSecString(timestamp);
         this.temporal = new Temporal(ts);
         this.dimensions = dimensions;
-        // validateDimensions();
     }
 
     /**
@@ -123,7 +123,6 @@ public class PairsLayerRequestType implements com.ibm.pa.utils.JsonSerializable 
 
         if (result == null) {
             try {
-
                 PairsLayerRequestType pairsLayer = JsonSerializable.deserializeStatic(json,
                         PairsLayerRequestType.class);
                 result = new PairsLayerRequestType[] { pairsLayer };
@@ -139,10 +138,10 @@ public class PairsLayerRequestType implements com.ibm.pa.utils.JsonSerializable 
             throw new Exception(all);
         }
 
-        // for (PairsLayerRequestType rlrt : result) {
-        // rlrt.validateDimensions();
-        // rlrt.validatePixelLevel();
-        // }
+        for (PairsLayerRequestType rlrt : result) {
+            // rlrt.validateDimensions();
+            rlrt.validatePixelLevel();
+        }
 
         return result;
     }
