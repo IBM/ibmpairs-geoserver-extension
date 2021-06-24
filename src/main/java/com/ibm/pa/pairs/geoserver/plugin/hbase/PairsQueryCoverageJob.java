@@ -8,8 +8,6 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -21,15 +19,7 @@ import javax.media.jai.TiledImage;
 import com.ibm.pa.utils.PairsUtilities;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.geometry.Envelope2D;
@@ -81,6 +71,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         this.pairsRasterRequest = pairsRasterRequest;
         this.pairsCoverageReader = coverageReader;
         this.dataBufferOnly = dataBufferOnly;
+        coverageName = coverageReader.getGridCoverageNames()[0];
     }
 
     @Override

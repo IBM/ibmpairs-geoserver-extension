@@ -12,6 +12,7 @@ public class BoundingBox {
     private double[] boundingArray;
 
     public BoundingBox(String bbox) {
+        boundingArray = new double[4];
         String[] coords = bbox.split(",");
         boundingArray[0] = Double.parseDouble(coords[0]);
         boundingArray[1] = Double.parseDouble(coords[1]);
@@ -20,23 +21,19 @@ public class BoundingBox {
     }
 
     public BoundingBox(double swlon, double swlat, double nelon, double nelat) {
-        this(new double[] { swlon, swlat }, new double[] { nelon, nelat });
+        this(new double[] { swlon, swlat, nelon, nelat });
     }
 
     public BoundingBox(final double[] swLonLat, final double[] neLonLat) {
-        boundingArray = new double[] { swLonLat[0], swLonLat[1], neLonLat[0], neLonLat[1] };
-        checkDimensions(boundingArray);
+        this(new double[] { swLonLat[0], swLonLat[1], neLonLat[0], neLonLat[1] });
     }
 
     public BoundingBox(final double[] boundingArray) {
         this.boundingArray = boundingArray;
     }
 
-    /**
-     * 'Default constructor' to make jackson object serialization work (double check
-     * this someday)
-     */
     private BoundingBox() {
+        boundingArray = new double[4];
     }
 
     /**
@@ -75,7 +72,7 @@ public class BoundingBox {
     }
 
     public String toQueryParam() {
-        String format = "%f,%f,%f,%f)";
+        String format = "%f,%f,%f,%f";
         String str = String.format(format, boundingArray[0], boundingArray[1], boundingArray[2], boundingArray[3]);
         return str;
     }

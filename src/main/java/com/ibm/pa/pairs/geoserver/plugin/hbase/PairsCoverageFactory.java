@@ -51,7 +51,7 @@ public class PairsCoverageFactory {
         width = pairsQueryCoverageJobs.get(0).getResponseImageDescriptor().getWidth();
         height = pairsQueryCoverageJobs.get(0).getResponseImageDescriptor().getHeight();
         javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
-        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 2);
+        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, nbands);
         java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
                 new Point(0, 0));
 

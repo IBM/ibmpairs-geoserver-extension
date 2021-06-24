@@ -4,12 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.ibm.pa.utils.PairsHttpRequestParamMap;
 import com.ibm.pa.utils.JsonSerializable;
+import com.ibm.pa.utils.PairsHttpRequestParamMap;
 
 /**
  * Return the query value contained in the threadlocal query string TODO Its
@@ -52,8 +51,9 @@ public class PairsWMSQueryParam implements JsonSerializable {
     /**
      * Note, the optionalParams can be used to be backwards compatible with a query
      * that provides a IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID instead of
-     * IBMPAIRS__LAYERQUERY. In this case, build the json for IBMPAIRSLAYER paramter from the
-     * IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID and replace them in paramMap.
+     * IBMPAIRS__LAYERQUERY. In this case, build the json for IBMPAIRSLAYER paramter
+     * from the IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID and replace them in
+     * paramMap.
      * 
      * todo: add optional parameters
      * 
@@ -83,14 +83,9 @@ public class PairsWMSQueryParam implements JsonSerializable {
 
     private ImageDescriptor buildRequestImageDescriptor() {
         String bboxStr = paramMap.get("BBOX");
-        StringTokenizer bboxTkn = new StringTokenizer(bboxStr, ",");
-        double swlat = Double.parseDouble(bboxTkn.nextToken());
-        double swlon = Double.parseDouble(bboxTkn.nextToken());
-        double nelat = Double.parseDouble(bboxTkn.nextToken());
-        double nelon = Double.parseDouble(bboxTkn.nextToken());
+        BoundingBox bbox = new BoundingBox(bboxStr);
         int height = Integer.parseInt((String) paramMap.get("HEIGHT"));
         int width = Integer.parseInt((String) paramMap.get("WIDTH"));
-        BoundingBox bbox = new BoundingBox(swlon, swlat, nelon, nelat);
 
         return new ImageDescriptor(bbox, height, width);
     }
