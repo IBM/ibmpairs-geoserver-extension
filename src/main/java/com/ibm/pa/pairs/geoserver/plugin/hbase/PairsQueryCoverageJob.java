@@ -89,7 +89,26 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         if (dataBufferOnly)
             return null;
 
-        writableRaster = buildRaster(responseImageDescriptor, imageDataFloat);
+        gridCoverage2D = buildGridCoverage2DFromRawRaster2D();
+
+        return gridCoverage2D;
+    }
+
+    public GridCoverage2D buildGridCoverage2DFromRawRaster2D() {
+        float[][] rawRaster = PairsUtilities.vector2array(imageDataFloat, responseImageDescriptor.getWidth());
+        gridCoverage2D = gridCoverageFactory.create(coverageName, rawRaster, responseEnvelope2D);
+        return gridCoverage2D;
+    }
+
+    public GridCoverage2D buildRGridCoverage2DFromWritableRaster() {
+        int width = responseImageDescriptor.getWidth();
+        int height = responseImageDescriptor.getHeight();
+        javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageDataFloat, width * height);
+
+        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1);
+        java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
+                new Point(0, 0));
+
         gridCoverage2D = gridCoverageFactory.create(coverageName, writableRaster, responseEnvelope2D);
 
         return gridCoverage2D;
@@ -125,18 +144,11 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return result;
     }
 
-    private WritableRaster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
-        int width = responseImageDescriptor.getWidth();
-        int height = responseImageDescriptor.getHeight();
-        javax.media.jai.DataBufferFloat dataBuffer = new DataBufferFloat(imageData, width * height);
-
-        SampleModel sampleModel = RasterFactory.createBandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, 1);
-        java.awt.image.WritableRaster writableRaster = RasterFactory.createWritableRaster(sampleModel, dataBuffer,
-                new Point(0, 0));
-
-        return writableRaster;
-    }
-
+    /**
+     * todo fix this up, it may have hope as it has color model
+     * @param raster
+     * @return
+     */
     private TiledImage buildTiledImage(Raster raster) {
         ColorModel colorModel = PlanarImage.createColorModel(raster.getSampleModel());
         javax.media.jai.TiledImage tiledImage = new TiledImage(0, 0, raster.getWidth(), raster.getHeight(), 0, 0,
