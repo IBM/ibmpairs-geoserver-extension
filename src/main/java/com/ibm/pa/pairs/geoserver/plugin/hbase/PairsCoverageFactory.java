@@ -39,7 +39,7 @@ public class PairsCoverageFactory {
 
         // Retrieve the data from pairsdataservice
         for (PairsRasterRequest req : pairsRasterReqs) {
-            PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, req, coverageReader, true);
+            PairsQueryCoverageJob pqcj = new PairsQueryCoverageJob(queryParams, req, coverageReader, false);
             pairsQueryCoverageJobs.add(pqcj);
             pqcj.call();
         }

@@ -8,6 +8,8 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -20,6 +22,7 @@ import com.ibm.pa.utils.PairsUtilities;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.util.EntityUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.geometry.Envelope2D;
@@ -71,12 +74,13 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         this.pairsRasterRequest = pairsRasterRequest;
         this.pairsCoverageReader = coverageReader;
         this.dataBufferOnly = dataBufferOnly;
-        coverageName = coverageReader.getGridCoverageNames()[0];
+        this.gridCoverageFactory = coverageReader.getGridCoverageFactory();
+        this.coverageName = coverageReader.getGridCoverageNames()[0];
     }
 
     @Override
     public GridCoverage2D call() throws Exception {
-        getDataFromPairsDataService(pairsRasterRequest);
+        imageDataFloat = getDataFromPairsDataService(pairsRasterRequest);
         if (dataBufferOnly)
             return null;
 
@@ -86,8 +90,9 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         return gridCoverage2D;
     }
 
-    public void getDataFromPairsDataService(PairsRasterRequest rasterRequest)
+    public float[] getDataFromPairsDataService(PairsRasterRequest rasterRequest)
             throws ClientProtocolException, URISyntaxException, IOException {
+        float[] result = null;
         HttpResponse response = PairsUtilities.getHttpResponseFromPairsDataService(rasterRequest);
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
@@ -101,8 +106,18 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
                 responseImageDescriptor.getBoundingBox().getWidth(),
                 responseImageDescriptor.getBoundingBox().getHeight());
 
-        byte[] rawData = PairsUtilities.readRawContent(response);
-        imageDataFloat = PairsUtilities.byteArray2FloatArray(rawData);
+        byte[] rawData = EntityUtils.toByteArray(response.getEntity());
+        // byte[] rawData =
+        // PairsUtilities.inputStream2ByteArray(response.getEntity().getContent());
+        FloatBuffer fb = ByteBuffer.wrap(rawData).asFloatBuffer();
+        if (fb.hasArray())
+            result = fb.array();
+        else {
+            result = new float[fb.limit()];
+            fb.get(result);
+        }
+
+        return result;
     }
 
     private WritableRaster buildRaster(ImageDescriptor responseImageDescriptor, float[] imageData) {
@@ -164,6 +179,8 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         // tiledImage.setData(raster);
         // result = gridCoverageFactory.create(coverageName, tiledImage,
         // responseEnvelope2D);
+
+        
 
         return result;
     }

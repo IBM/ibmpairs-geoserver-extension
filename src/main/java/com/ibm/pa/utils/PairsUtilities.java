@@ -231,32 +231,34 @@ public class PairsUtilities {
         return result;
     }
 
-    /*
-     * public static float[] getDataFloat(URI uri) throws ClientProtocolException,
-     * IOException, URISyntaxException { byte[] rawData = getDataRaw(uri); float[]
-     * floatData = byteArray2FloatArray(rawData); return floatData; }
-     */
     public static byte[] inputStream2ByteArray(InputStream is) throws IOException {
         byte[] result = null;
         int bufferSize = (int) Math.pow(2, 16);
         byte[] data = new byte[bufferSize];
         int nRead;
-        BufferedInputStream bis = new BufferedInputStream(is, bufferSize);
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) Math.pow(2, 20));
+
+        BufferedInputStream bis = new BufferedInputStream(is);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         while ((nRead = bis.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+            baos.write(data, 0, nRead);
         }
-        buffer.flush();
-        result = buffer.toByteArray();
+        result = baos.toByteArray();
+
         return result;
     }
 
     public static float[] byteArray2FloatArray(byte[] input) {
-        ByteBuffer bb = ByteBuffer.wrap(input);
-        FloatBuffer fb = bb.asFloatBuffer();
-        float[] result = new float[fb.limit()];
-        fb.get(result);
+        float[] result = null;
+
+        FloatBuffer fb = ByteBuffer.wrap(input).asFloatBuffer();
+        if (fb.hasArray())
+            result = fb.array();
+        else {
+            result = new float[fb.limit()];
+            fb.get(result);
+        }
+
         return result;
     }
 
