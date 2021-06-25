@@ -6,11 +6,12 @@ import java.util.logging.Logger;
 import java.awt.Point;
 import java.awt.image.*;
 
-
 import javax.media.jai.DataBufferFloat;
 import javax.media.jai.RasterFactory;
 
 import org.geotools.coverage.grid.GridCoverage2D;
+
+import net.opengis.gml311.RectifiedGridCoverageType;
 
 /**
  * Convenience methods from building coverage and coverage components
@@ -60,5 +61,5 @@ public class PairsCoverageFactory {
 
         return gridCoverage2D;
     }
-    
+
 }

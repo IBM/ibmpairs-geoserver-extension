@@ -69,6 +69,11 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     GridCoverage2D gridCoverage2D;
 
     public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsRasterRequest pairsRasterRequest,
+            PairsCoverageReader coverageReader) {
+        this(queryParams, pairsRasterRequest, coverageReader, false);
+    }
+
+    public PairsQueryCoverageJob(PairsWMSQueryParam queryParams, PairsRasterRequest pairsRasterRequest,
             PairsCoverageReader coverageReader, Boolean dataBufferOnly) {
         this.queryParams = queryParams;
         this.pairsRasterRequest = pairsRasterRequest;
@@ -145,7 +150,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
      * 
      * @return
      */
-    private GridCoverage2D buildGridCoverage2D_2() {
+    public GridCoverage2D buildGridCoverage2D_2() {
         int width = responseImageDescriptor.getWidth();
         int height = responseImageDescriptor.getHeight();
         float[][] imageData = { imageDataFloat, imageDataFloat };
@@ -179,8 +184,6 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         // tiledImage.setData(raster);
         // result = gridCoverageFactory.create(coverageName, tiledImage,
         // responseEnvelope2D);
-
-        
 
         return result;
     }
