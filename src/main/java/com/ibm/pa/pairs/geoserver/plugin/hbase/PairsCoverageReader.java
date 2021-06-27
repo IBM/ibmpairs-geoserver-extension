@@ -101,7 +101,28 @@ import org.opengis.referencing.ReferenceIdentifier;
 /**
  * **************************************
  * 
- * Note regarding originalEnvelope and originalGridRange:
+ * Note: Axis ordering of coordinates (
+ * https://docs.geoserver.org/stable/en/user/services/wms/basics.html ) We only
+ * support WMS 1.3+ in which axis ordering must match that of EPSG database.
+ * EPSG:4326 is (lat,lon) or (north/easting) order while (almost ?) all other
+ * CRS in EPSG catalog are (lon, lat) (easting/north). This means BBOX on query
+ * params must be (lat, lon). The Geotools library is configured to be (lon,
+ * lat) so when we receive the reequest on method 'Coverage2D read(Params)' the
+ * bbox should be correctly converted to an Geotools Envelope object of (lon,
+ * lat).
+ * 
+ * All requests to Hbase data query through pairsdataserver API are box =
+ * (lon,lat) as is the return response. The response is handed back to Geoserver
+ * using Geotools envelop classes so all should be handled correctly by them.
+ * 
+ * However, one place where we have to be aware of the order is the 'orginal'
+ * envelope request which preceeds the call to Coverage2D read(...). Since we
+ * are a dynamic coverage I have to give back the original envelop base on the
+ * request. I've tried to name the requests consistently to distinguish what is
+ * being done for
+ * 
+ * 
+ * Note: regarding originalEnvelope and originalGridRange:
  * 
  * These refer to the BBOX (lon, lat) and grid (x,y pixels) of the data source.
  * These objects do not seem to be used in significant way in the normal WMS
@@ -139,6 +160,9 @@ import org.opengis.referencing.ReferenceIdentifier;
  * AbstractGridCoverage2DReader, but hope we don't have to add that
  * complication.
  * 
+ * ***********************************************************************
+ * 
+ * 
  * TODO: There are a couple things that need more understanding here regarding
  * the input CRS. The native CRS for PAIRS plugin layer is 4326. That is how
  * data stored in hbase. WHen a WMS req comes in with this CRS4326, Geoserver
@@ -172,15 +196,13 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * Also see AbstractGridCoverage2DReader.getResolution()
  * 
- * 
- * End Note regarding originalEnvelope and originalGridRange:
- * *********************************************
  */
 public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     public static final Logger logger = Logger.getLogger(PairsCoverageReader.class.getName());
     public static int GRID_WIDTH = 512;
     public static int GRID_HEIGHT = 256;
-    PairsWMSQueryParam pairsWMSQueryParams;
+    PairsWMSQueryParam pairsOriginalWMSQueryParams; // Used in Constructor to build originalEnvelope...
+    // PairsWMSQueryParam pairsRequestQueryParams; // Used in method gridCoverage2D read(Params ..)
     double pairsPixelResolution = -1;
 
     /*
@@ -195,14 +217,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         coverageName = input.toString();
         crs = CRS.decode("EPSG:4326");
 
-        pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
-        if (pairsWMSQueryParams != null) {
+        pairsOriginalWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+        if (pairsOriginalWMSQueryParams != null) {
             pairsPixelResolution = getPairsPixelResolution();
             originalEnvelope = getPairsOriginalEnvelope();
             originalGridRange = getPairsOriginalGridRange();
             setlayout(new ImageLayout(0, 0, getOriginalGridRange().getSpan(0), getOriginalGridRange().getSpan(1)));
-            if (pairsWMSQueryParams.getCrs() != null)
-                crs = CRS.decode(pairsWMSQueryParams.getCrs());
+            if (pairsOriginalWMSQueryParams.getCrs() != null)
+                crs = CRS.decode(pairsOriginalWMSQueryParams.getCrs());
         } else {
             originalEnvelope = getMyOriginalEnvelope(); // temporary fix
             originalGridRange = getMyOriginalGridRange(); // temporary fix
@@ -271,15 +293,15 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
      */
     @Override
     public int getGridCoverageCount() {
-        Integer num = pairsWMSQueryParams.getLayers().length;
+        Integer num = pairsOriginalWMSQueryParams.getLayers().length;
         return num;
     }
 
     private Double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
         // return 0.000064;
-        ImageDescriptor imageDescriptor = pairsWMSQueryParams.getRequestImageDescriptor();
-        int layerId = this.pairsWMSQueryParams.getLayers()[0].getId();
-        String statistic = this.pairsWMSQueryParams.getStatistic();
+        PairsImageDescriptor imageDescriptor = pairsOriginalWMSQueryParams.getRequestImageDescriptor();
+        int layerId = this.pairsOriginalWMSQueryParams.getLayers()[0].getId();
+        String statistic = this.pairsOriginalWMSQueryParams.getStatistic();
         return PairsUtilities.getPairsResolution(layerId, statistic, imageDescriptor);
     }
 
@@ -309,13 +331,13 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     GeneralEnvelope getPairsOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
         GeneralEnvelope result = null;
 
-        double lonSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
-        double latSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        double lonSpan = pairsOriginalWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = pairsOriginalWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
         int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
         int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
         lonSpan = xSpan * this.pairsPixelResolution;
         latSpan = ySpan * this.pairsPixelResolution;
-        double[] swLonLat = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getSwLonLat();
+        double[] swLonLat = pairsOriginalWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getSwLonLat();
         double[] nelonLat = { swLonLat[0] + lonSpan, swLonLat[1] + latSpan };
 
         result = new GeneralEnvelope(swLonLat, nelonLat);
@@ -333,8 +355,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     GridEnvelope getPairsOriginalGridRange() {
         GeneralGridEnvelope result = null;
 
-        double lonSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
-        double latSpan = pairsWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
+        double lonSpan = pairsOriginalWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getWidth();
+        double latSpan = pairsOriginalWMSQueryParams.getRequestImageDescriptor().getBoundingBox().getHeight();
         int xSpan = (int) (lonSpan / this.pairsPixelResolution) + 1;
         int ySpan = (int) (latSpan / this.pairsPixelResolution) + 1;
 
@@ -352,17 +374,20 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     public GridCoverage2D read(GeneralParameterValue[] params) throws IOException {
         GridCoverage2D gridCoverage2D = null;
         GeneralEnvelope requestedEnvelope = null;
-        Rectangle dim = null;
+        Rectangle requestGridDimensions = null;
         Color inputTransparentColor = null;
         OverviewPolicy overviewPolicy = null;
         int[] suggestedTileSize = null;
+        BoundingBox boundingBox = null;
+        PairsImageDescriptor requestImageDescriptor = null;
 
         ImageIO io;
         ImageIOExt ioe;
 
         /**
-         * NOTE: NB May need to update the pairsWMSQueryParams created during construction depending on the envelope Param[] passed
-         * to the read(Params...) is different from BBOX.
+         * NOTE: NB May need to update the pairsWMSQueryParams created during
+         * construction depending on the envelope Param[] passed to the read(Params...)
+         * is different from BBOX.
          */
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
@@ -374,7 +399,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
                 if (name.equals(AbstractGridFormat.READ_GRIDGEOMETRY2D.getName())) {
                     final GridGeometry2D gg = (GridGeometry2D) param.getValue();
                     requestedEnvelope = new GeneralEnvelope((Envelope) gg.getEnvelope2D());
-                    dim = gg.getGridRange2D().getBounds();
+                    requestGridDimensions = gg.getGridRange2D().getBounds();
                     continue;
                 }
                 if (name.equals(AbstractGridFormat.OVERVIEW_POLICY.getName())) {
@@ -420,9 +445,6 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             newHints.add(new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout));
         }
 
-        BoundingBox boundingBox = null;
-        ImageDescriptor requestImageDescriptor = null;
-
         // if (params.width.toInt == 5 && params.height.toInt == 5) {
         // TODO: https://geomesa.atlassian.net/browse/GEOMESA-868,
         // https://geomesa.atlassian.net/browse/GEOMESA-869
@@ -432,7 +454,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         // result = coverageFactory.create(coverageName,
         // RasterUtils.defaultBufferedImage, params.envelope);
         // }
-        if (dim.height == 5 && dim.width == 5) {
+        if (requestGridDimensions.height == 5 && requestGridDimensions.width == 5) {
             // orig
             // boundingBox = new BoundingBox(-180, -85, 180, 85);
             // requestImageDescriptor = new ImageDescriptor(boundingBox, 384, 768);
@@ -440,16 +462,16 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             // Testing code oct 2019
             logger.info("Geoserver invoked special case; dim.height, width == 5 case");
             boundingBox = new BoundingBox(-10, -10, 10, 10);
-            requestImageDescriptor = new ImageDescriptor(boundingBox, 5, 5);
+            requestImageDescriptor = new PairsImageDescriptor(boundingBox, 5, 5);
             float[] mockupImage = new float[requestImageDescriptor.height * requestImageDescriptor.width];
             gridCoverage2D = buildGridCoverage2D(requestImageDescriptor, mockupImage);
             return gridCoverage2D;
         }
 
         try {
-            //  pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+            PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
             logger.info("Request ImageDescriptor: " + pairsWMSQueryParams.toString());
-            gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsWMSQueryParams, this);
+            gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsOriginalWMSQueryParams, this);
             // PairsQueryCoverageJob pairsQueryCoverageJob = new
             // PairsQueryCoverageJob(pairsWMSQueryParams, this);
             // gridCoverage2D = pairsQueryCoverageJob.call();
@@ -462,7 +484,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return gridCoverage2D;
     }
 
-    private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
+    private GridCoverage2D buildGridCoverage2D(PairsImageDescriptor responseImageDescriptor, float[] imageVector) {
         GridCoverage2D result = null;
 
         Envelope2D responseEnvelope = new Envelope2D(getCoordinateReferenceSystem(),

@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.BoundingBox;
-import com.ibm.pa.pairs.geoserver.plugin.hbase.ImageDescriptor;
+import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsImageDescriptor;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsGeoserverExtensionConfig;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsRasterRequest;
 import com.ibm.pa.pairs.geoserver.plugin.hbase.PairsWMSQueryParam;
@@ -51,7 +51,7 @@ public class PairsUtilities {
     public static int TEST_LAYERID = 49180;
     public static long TEST_TIMESTAMP = 1435708800L;
     public static BoundingBox bbox = new BoundingBox(-80, 30, -70, 40);
-    public static ImageDescriptor TEST_IMAGE_DESCRIPTOR = new ImageDescriptor(bbox, 384, 768);
+    public static PairsImageDescriptor TEST_IMAGE_DESCRIPTOR = new PairsImageDescriptor(bbox, 384, 768);
 
     static class ResultWrapper {
         public int value;
@@ -75,7 +75,7 @@ public class PairsUtilities {
     public static void testComputePairsResolution() throws ClientProtocolException, IOException, URISyntaxException {
         PairsGeoserverExtensionConfig.getInstance()
                 .setPairsDataServiceBaseUrl("https://pairs-alpha.res.ibm.com:8080/api/v1/dataquery/");
-        ImageDescriptor imageDescriptor = new ImageDescriptor(new double[] { -90, 50, -80, 60 }, 256, 128);
+        PairsImageDescriptor imageDescriptor = new PairsImageDescriptor(new double[] { -90, 50, -80, 60 }, 256, 128);
         int layerId = 51;
         String statistic = "";
 
@@ -85,7 +85,7 @@ public class PairsUtilities {
 
     public static HttpResponse getHttpResponseFromPairsDataService(PairsRasterRequest rasterRequest)
             throws URISyntaxException, ClientProtocolException, IOException {
-        ImageDescriptor imageDescriptor = rasterRequest.getRequestImageDescriptor();
+        PairsImageDescriptor imageDescriptor = rasterRequest.getRequestImageDescriptor();
         HttpResponse response = null;
 
         URIBuilder builder = new URIBuilder(
@@ -171,7 +171,7 @@ public class PairsUtilities {
      * return response; }
      */
 
-    public static Double getPairsResolution(int layerId, String statistic, ImageDescriptor imageDescriptor)
+    public static Double getPairsResolution(int layerId, String statistic, PairsImageDescriptor imageDescriptor)
             throws ClientProtocolException, IOException, URISyntaxException {
         Double resolution = null;
 

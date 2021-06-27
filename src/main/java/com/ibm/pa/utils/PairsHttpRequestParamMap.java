@@ -3,7 +3,6 @@ package com.ibm.pa.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +36,13 @@ public class PairsHttpRequestParamMap extends HashMap<String, String[]> {
     public String get(String key) {
         String[] val = getArray(key);
         return val == null ? null : val[0];
+    }
+
+    public String get(String key, String defaultValue) {
+        if (get(key) != null)
+            return get(key);
+        else
+            return defaultValue;
     }
 
     public String[] getArray(String key) {

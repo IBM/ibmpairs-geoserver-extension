@@ -1,4 +1,4 @@
-package ibm.pa.pairs.driver;
+package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

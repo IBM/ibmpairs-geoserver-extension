@@ -1,12 +1,18 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
+
+/**
+ * Encapsulate the info required to go to pairsdataservice API to get the raw raster data.
+ * This is the pairsLayer (id, timestampd, dimensions) and the ImageDescriptor(bbox, resolution),
+ * 
+ */
 public class PairsRasterRequest {
     private final PairsLayerRequestType pairsLayer;
-    private final ImageDescriptor requestImageDescriptor;
+    private final PairsImageDescriptor requestImageDescriptor;
     private String statistic = "";
     private String ibmpairsquery;
 
-    public PairsRasterRequest(PairsLayerRequestType pairsLayer, ImageDescriptor requestedImageDescriptor) {
+    public PairsRasterRequest(PairsLayerRequestType pairsLayer, PairsImageDescriptor requestedImageDescriptor) {
         this.pairsLayer = pairsLayer;
         this.requestImageDescriptor = requestedImageDescriptor;
         this.ibmpairsquery = pairsLayer.toJson();
@@ -16,7 +22,7 @@ public class PairsRasterRequest {
         return this.pairsLayer;
     }
 
-    public ImageDescriptor getRequestImageDescriptor() {
+    public PairsImageDescriptor getRequestImageDescriptor() {
         return this.requestImageDescriptor;
     }
 

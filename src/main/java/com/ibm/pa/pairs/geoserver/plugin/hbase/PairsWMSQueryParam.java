@@ -1,5 +1,6 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.logging.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ibm.pa.utils.JsonSerializable;
 import com.ibm.pa.utils.PairsHttpRequestParamMap;
+
+import org.geotools.geometry.GeneralEnvelope;
 
 /**
  * Return the query value contained in the threadlocal query string TODO Its
@@ -30,39 +33,31 @@ public class PairsWMSQueryParam implements JsonSerializable {
     String crs;
     String ibmpairslayer;
     PairsLayerRequestType[] layers;
-    ImageDescriptor requestImageDescriptor;
+    PairsImageDescriptor pairsImageDescriptor;
 
-    public PairsWMSQueryParam(final PairsHttpRequestParamMap paramMap) throws Exception {
+    public PairsWMSQueryParam(PairsImageDescriptor pairsImageDescriptor, final PairsHttpRequestParamMap paramMap)
+            throws Exception {
         Map<String, String> invalidParams;
         this.paramMap = paramMap;
+        this.pairsImageDescriptor = pairsImageDescriptor;
 
         invalidParams = validateParams(paramMap);
         if (!invalidParams.isEmpty())
             throw new IllegalArgumentException(invalidParams.toString());
 
-        setStatistic(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC));
-        setCrs(paramMap.get("CRS"));
+        setStatistic(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_QUERY_KEY_STATISTIC, "mean"));
+        setCrs(paramMap.get("CRS", "EPSG:4326"));
         setIbmpairslayer(paramMap.get(PairsGeoserverExtensionConfig.PAIRS_LAYER_JSON));
         layers = PairsLayerRequestType.buildFromJson(ibmpairslayer);
-
-        setRequestImageDescriptor(buildRequestImageDescriptor());
     }
 
     /**
-     * Note, the optionalParams can be used to be backwards compatible with a query
-     * that provides a IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID instead of
-     * IBMPAIRS__LAYERQUERY. In this case, build the json for IBMPAIRSLAYER paramter
-     * from the IBMPAIRS_TIMESTAMP and IBMPAIRS_LAYERID and replace them in
-     * paramMap.
-     * 
-     * todo: add optional parameters
-     * 
      * 
      * @param optionalParams - Used to add parameters if not on request,
      * @return
      * @throws Exception
      */
-    public static PairsWMSQueryParam buildPairsWMSQueryParam(Map<String, String[]> optionalParams) throws Exception {
+    public static PairsWMSQueryParam buildPairsWMSQueryParamFromCoverageRequest(GeneralEnvelope requestEnvelop, Rectangle requestGridDimensions) throws Exception {
         Map<String, Object> kvp = null;
         PairsHttpRequestParamMap paramMap = null;
 
@@ -77,22 +72,35 @@ public class PairsWMSQueryParam implements JsonSerializable {
 
         paramMap = new PairsHttpRequestParamMap(req.getHttpRequest().getParameterMap());
         kvp = req.getRawKvp();
-        PairsWMSQueryParam result = new PairsWMSQueryParam(paramMap);
+
+        PairsImageDescriptor pairsImageDescriptor = buildRequestImageDescriptor(requestEnvelop, requestGridDimensions);
+        PairsWMSQueryParam result = new PairsWMSQueryParam(pairsImageDescriptor, paramMap);
+        
         return result;
     }
 
-    private ImageDescriptor buildRequestImageDescriptor() {
+    private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope, Rectangle requestGridDimensions) {
+        double swlonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
+        double nelonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
+        BoundingBox bbox = new BoundingBox(swlonlat, nelonlat);
+        int height = (int) requestGridDimensions.getBounds().getHeight();
+        int width = (int) requestGridDimensions.getBounds().getHeight();
+
+        return new PairsImageDescriptor(bbox, height, width);
+    }
+
+    private static PairsImageDescriptor buildRequestImageDescriptor(PairsHttpRequestParamMap paramMap) {
         String bboxStr = paramMap.get("BBOX");
         BoundingBox bbox = new BoundingBox(bboxStr);
         int height = Integer.parseInt((String) paramMap.get("HEIGHT"));
         int width = Integer.parseInt((String) paramMap.get("WIDTH"));
 
-        return new ImageDescriptor(bbox, height, width);
+        return new PairsImageDescriptor(bbox, height, width);
     }
 
     public List<PairsRasterRequest> generateRequestForEachLayer() {
         List<PairsRasterRequest> result = new ArrayList<>();
-        ImageDescriptor requestedImageDescriptor = requestImageDescriptor;
+        PairsImageDescriptor requestedImageDescriptor = pairsImageDescriptor;
 
         for (PairsLayerRequestType plrt : layers) {
             PairsRasterRequest rasterRequest = new PairsRasterRequest(plrt, requestedImageDescriptor);
@@ -134,12 +142,12 @@ public class PairsWMSQueryParam implements JsonSerializable {
         this.statistic = statistic;
     }
 
-    public ImageDescriptor getRequestImageDescriptor() {
-        return requestImageDescriptor;
+    public PairsImageDescriptor getRequestImageDescriptor() {
+        return pairsImageDescriptor;
     }
 
-    public void setRequestImageDescriptor(ImageDescriptor requestImageDescriptor) {
-        this.requestImageDescriptor = requestImageDescriptor;
+    public void setRequestImageDescriptor(PairsImageDescriptor requestImageDescriptor) {
+        this.pairsImageDescriptor = requestImageDescriptor;
     }
 
     public String getCrs() {

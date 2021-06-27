@@ -61,7 +61,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
     String coverageName;
     GridCoverageFactory gridCoverageFactory;
     Boolean dataBufferOnly = false;
-    ImageDescriptor responseImageDescriptor;
+    PairsImageDescriptor responseImageDescriptor;
     Envelope2D responseEnvelope2D;
     float[] imageDataFloat;
     WritableRaster writableRaster;
@@ -121,7 +121,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
 
         String pairsHeaderJson = PairsUtilities.getResponseHeader(response,
                 PairsGeoserverExtensionConfig.PAIRS_HEADER_KEY);
-        responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson, ImageDescriptor.class);
+        responseImageDescriptor = PairsUtilities.deserializeJson(pairsHeaderJson, PairsImageDescriptor.class);
         logger.info("Response ImageDescriptor: " + responseImageDescriptor.toString());
 
         responseEnvelope2D = new Envelope2D(pairsCoverageReader.getCoordinateReferenceSystem(),
@@ -210,7 +210,7 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
      * @param imageVector
      * @return
      */
-    private GridCoverage2D buildGridCoverage2D(ImageDescriptor responseImageDescriptor, float[] imageVector) {
+    private GridCoverage2D buildGridCoverage2D(PairsImageDescriptor responseImageDescriptor, float[] imageVector) {
         GridCoverage2D result = null;
 
         float[][] raster = PairsUtilities.vector2array(imageVector, responseImageDescriptor.getWidth());
@@ -230,11 +230,11 @@ public class PairsQueryCoverageJob implements Callable<GridCoverage2D> {
         this.dataBufferOnly = dataBufferOnly;
     }
 
-    public ImageDescriptor getResponseImageDescriptor() {
+    public PairsImageDescriptor getResponseImageDescriptor() {
         return responseImageDescriptor;
     }
 
-    public void setResponseImageDescriptor(ImageDescriptor responseImageDescriptor) {
+    public void setResponseImageDescriptor(PairsImageDescriptor responseImageDescriptor) {
         this.responseImageDescriptor = responseImageDescriptor;
     }
 
