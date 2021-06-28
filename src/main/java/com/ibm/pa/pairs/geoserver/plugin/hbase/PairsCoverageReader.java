@@ -100,12 +100,18 @@ import org.opengis.referencing.ReferenceIdentifier;
  * 
  * However, one place where we have to be aware of the order is the 'orginal'
  * envelope request which preceeds the call to Coverage2D read(...). Since we
- * are a dynamic coverage I have to give back the original envelop base on the
- * request. I've tried to name the requests consistently to distinguish what is
- * being done for
+ * are a dynamic coverage I have to give back the original envelop based on the
+ * request crs and possibly bounding box (see below about doing WPS). Have also noticed
+ * issue with WCS that I'm working to fix.
  * 
  * 
- * Note: regarding originalEnvelope and originalGridRange:
+ * Note: regarding CoverageReader, originalEnvelope and originalGridRange:
+ * As of Geoserver 19+ and maybe 18, (haven't tested) When a user makes the first call to getMap() he
+ * gets an instance of PairsCoverageReader which is then reused for the client.
+ * So some state from previous call may be saved. Have noticed this issue with WCS and
+ * with WMS that I fixed. Mainly, I'm not sure of the consequence of changing the CRS or originalEnvelopes
+ * of if Geoserver may change these based on the query results. Have to test.
+ * 
  * 
  * These refer to the BBOX (lon, lat) and grid (x,y pixels) of the data source.
  * These objects do not seem to be used in significant way in the normal WMS
@@ -113,7 +119,7 @@ import org.opengis.referencing.ReferenceIdentifier;
  * read() method here tells Geoserver the exact BBOX and pixel range of the
  * returned raster.
  * 
- * For requests like WPS we find that Geoserver queries the GeneralEnvelope and
+ * For requests like WPS we find that Geoserver queries the original GeneralEnvelope and
  * GridRange prior to issuing the call to read(). The dimensions in these
  * objects are used by Geoserver to scale and (affine)transform the Params it
  * passes to read(). Therefore, the original envelope and GridRange contents
@@ -289,14 +295,14 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         return PairsUtilities.getPairsResolution(layerId, statistic, imageDescriptor);
     }
 
-    GeneralEnvelope getMyOriginalEnvelope() throws NoSuchAuthorityCodeException, FactoryException {
+    GeneralEnvelope getMyOriginalEnvelope() {
         GeneralEnvelope result = null;
         double minlon = -180, minlat = -90;
         double maxlon = 180, maxlat = 90;
         double[] minBB = new double[] { minlon, minlat }, maxBB = new double[] { maxlon, maxlat };
         result = new GeneralEnvelope(minBB, maxBB);
-        result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
-        // result.setCoordinateReferenceSystem(crs);
+        // result.setCoordinateReferenceSystem(this.getCoordinateReferenceSystem());
+        result.setCoordinateReferenceSystem(crs);
         return result;
     }
 
@@ -365,8 +371,9 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         BoundingBox boundingBox = null;
         PairsImageDescriptor requestImageDescriptor = null;
 
-        ImageIO io;
-        ImageIOExt ioe;
+        // originalEnvelope = getMyOriginalEnvelope();
+        // originalGridRange = getMyOriginalGridRange();
+        // setlayout(new ImageLayout(0, 0, getMyOriginalGridRange().getSpan(0), getMyOriginalGridRange().getSpan(1)));
 
         /**
          * NOTE: NB May need to update the pairsWMSQueryParams created during
@@ -456,7 +463,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
             PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam
                     .buildPairsWMSQueryParamFromCoverageRequest(requestedEnvelope, requestGridDimensions);
             logger.info("Request ImageDescriptor: " + pairsWMSQueryParams.toString());
-            gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsOriginalWMSQueryParams, this);
+            gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsWMSQueryParams, this);
             // PairsQueryCoverageJob pairsQueryCoverageJob = new
             // PairsQueryCoverageJob(pairsWMSQueryParams, this);
             // gridCoverage2D = pairsQueryCoverageJob.call();

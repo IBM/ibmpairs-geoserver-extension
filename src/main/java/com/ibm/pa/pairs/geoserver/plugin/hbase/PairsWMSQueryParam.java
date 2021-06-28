@@ -89,7 +89,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
     private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope,
             Rectangle requestGridDimensions) {
         double swlonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
-        double nelonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
+        double nelonlat[] = requestEnvelope.getUpperCorner().getCoordinate();
         BoundingBox bbox = new BoundingBox(swlonlat, nelonlat);
         int height = (int) requestGridDimensions.getBounds().getHeight();
         int width = (int) requestGridDimensions.getBounds().getHeight();
@@ -144,15 +144,19 @@ public class PairsWMSQueryParam implements JsonSerializable {
     private static PairsImageDescriptor buildRequestImageDescriptor(PairsHttpRequestParamMap paramMap)
             throws NoSuchAuthorityCodeException, FactoryException {
         final String bboxQueryParam = paramMap.get("BBOX");
-        String bboxCorrected = null;
+        final CoordinateReferenceSystem crs4326 = CRS.decode("EPSG:4326");
+        
         String WMSVersion = paramMap.get("VERSION");
-        String[] versionComp = WMSVersion.split(".");
+        String[] versionComp = WMSVersion.split("\\.");
         boolean is13plus = Integer.parseInt(versionComp[1]) >= 3;
+        
         String crsStr = paramMap.get("CRS");
-        CoordinateReferenceSystem cref = CRS.decode(crsStr);
-        AxisOrder axisOrder = CRS.getAxisOrder(cref);
+        CoordinateReferenceSystem crs = CRS.decode(crsStr);
+        boolean is4326 = crs == crs4326;
+        AxisOrder axisOrder = CRS.getAxisOrder(crs);
 
-        if (is13plus && axisOrder == AxisOrder.NORTH_EAST) {
+        String bboxCorrected = null;
+        if (is13plus && is4326) {
             String[] bboxComp = bboxQueryParam.split(",");
             String selon = bboxComp[1];
             String selat = bboxComp[0];
