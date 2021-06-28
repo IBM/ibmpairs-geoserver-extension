@@ -12,6 +12,11 @@ import com.ibm.pa.utils.JsonSerializable;
 import com.ibm.pa.utils.PairsHttpRequestParamMap;
 
 import org.geotools.geometry.GeneralEnvelope;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.CRS.AxisOrder;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 /**
  * Return the query value contained in the threadlocal query string TODO Its
@@ -52,12 +57,14 @@ public class PairsWMSQueryParam implements JsonSerializable {
     }
 
     /**
+     * Used on PairsCoverageReader.read(...) mehod to build params to use in call to
+     * pairsdataservice API to get the raster from hbase
      * 
-     * @param optionalParams - Used to add parameters if not on request,
      * @return
      * @throws Exception
      */
-    public static PairsWMSQueryParam buildPairsWMSQueryParamFromCoverageRequest(GeneralEnvelope requestEnvelop, Rectangle requestGridDimensions) throws Exception {
+    public static PairsWMSQueryParam buildPairsWMSQueryParamFromCoverageRequest(GeneralEnvelope requestEnvelope,
+            Rectangle requestGridDimensions) throws Exception {
         Map<String, Object> kvp = null;
         PairsHttpRequestParamMap paramMap = null;
 
@@ -73,13 +80,14 @@ public class PairsWMSQueryParam implements JsonSerializable {
         paramMap = new PairsHttpRequestParamMap(req.getHttpRequest().getParameterMap());
         kvp = req.getRawKvp();
 
-        PairsImageDescriptor pairsImageDescriptor = buildRequestImageDescriptor(requestEnvelop, requestGridDimensions);
+        PairsImageDescriptor pairsImageDescriptor = buildRequestImageDescriptor(requestEnvelope, requestGridDimensions);
         PairsWMSQueryParam result = new PairsWMSQueryParam(pairsImageDescriptor, paramMap);
-        
+
         return result;
     }
 
-    private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope, Rectangle requestGridDimensions) {
+    private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope,
+            Rectangle requestGridDimensions) {
         double swlonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
         double nelonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
         BoundingBox bbox = new BoundingBox(swlonlat, nelonlat);
@@ -89,9 +97,72 @@ public class PairsWMSQueryParam implements JsonSerializable {
         return new PairsImageDescriptor(bbox, height, width);
     }
 
-    private static PairsImageDescriptor buildRequestImageDescriptor(PairsHttpRequestParamMap paramMap) {
-        String bboxStr = paramMap.get("BBOX");
-        BoundingBox bbox = new BoundingBox(bboxStr);
+    /**
+     * Used in PairsCoverageReader constructor to help get originalEnvelope etc
+     * which has to be done from http query params since that is all info avail at
+     * time of call.
+     * 
+     * @return
+     * @throws Exception
+     */
+    public static PairsWMSQueryParam buildPairsWMSQueryParamFromQueryParams() throws Exception {
+        Map<String, Object> kvp = null;
+        PairsHttpRequestParamMap paramMap = null;
+
+        org.geoserver.ows.Request req = org.geoserver.ows.Dispatcher.REQUEST.get();
+        if (req == null) {
+            // see comments above about update: dec 2020
+            String msg = "Unable to retrieve ThreadLocal org.geoserver.ows.Dispatcher.REQUEST.get()";
+            logger.info(msg);
+            // throw new IllegalArgumentException(msg);
+            return null;
+        }
+
+        paramMap = new PairsHttpRequestParamMap(req.getHttpRequest().getParameterMap());
+        kvp = req.getRawKvp();
+
+        PairsImageDescriptor pairsImageDescriptor = buildRequestImageDescriptor(paramMap);
+        PairsWMSQueryParam result = new PairsWMSQueryParam(pairsImageDescriptor, paramMap);
+
+        return result;
+    }
+
+    /**
+     * Note, EPSG:4326 is (lat,lon) order in EPSG database. So must be specified
+     * that way in the bbox param on WMS getMap request to Gesoerver for WMS 1.3+.
+     * (see https://docs.geoserver.org/stable/en/user/services/wms/basics.html)
+     * Example;
+     * geoserver/wms?VERSION=1.1.1&REQUEST=GetMap&SRS=epsg:4326&BBOX=-180,-90,180,90&…
+     * geoserver/wms?VERSION=1.3.0&REQUEST=GetMap&CRS=epsg:4326&BBOX=-90,-180,90,180&…
+     * 
+     * 
+     * @param paramMap
+     * @return
+     * @throws FactoryException
+     * @throws NoSuchAuthorityCodeException
+     */
+    private static PairsImageDescriptor buildRequestImageDescriptor(PairsHttpRequestParamMap paramMap)
+            throws NoSuchAuthorityCodeException, FactoryException {
+        final String bboxQueryParam = paramMap.get("BBOX");
+        String bboxCorrected = null;
+        String WMSVersion = paramMap.get("VERSION");
+        String[] versionComp = WMSVersion.split(".");
+        boolean is13plus = Integer.parseInt(versionComp[1]) >= 3;
+        String crsStr = paramMap.get("CRS");
+        CoordinateReferenceSystem cref = CRS.decode(crsStr);
+        AxisOrder axisOrder = CRS.getAxisOrder(cref);
+
+        if (is13plus && axisOrder == AxisOrder.NORTH_EAST) {
+            String[] bboxComp = bboxQueryParam.split(",");
+            String selon = bboxComp[1];
+            String selat = bboxComp[0];
+            String nelon = bboxComp[3];
+            String nelat = bboxComp[2];
+            bboxCorrected = String.join(",", selon, selat, nelon, nelat);
+        } else
+            bboxCorrected = bboxQueryParam;
+
+        BoundingBox bbox = new BoundingBox(bboxCorrected);
         int height = Integer.parseInt((String) paramMap.get("HEIGHT"));
         int width = Integer.parseInt((String) paramMap.get("WIDTH"));
 

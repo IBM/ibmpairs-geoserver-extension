@@ -35,23 +35,8 @@
 package com.ibm.pa.pairs.geoserver.plugin.hbase;
 
 import java.awt.Color;
-import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.Transparency;
-import java.awt.color.ColorSpace;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferFloat;
-import java.awt.image.DataBufferInt;
-import java.awt.image.ImageObserver;
-import java.awt.image.Raster;
-import java.awt.image.SampleModel;
-import java.awt.image.WritableRaster;
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
@@ -64,9 +49,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.ibm.pa.utils.PairsUtilities;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
-import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GeneralGridEnvelope;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -202,7 +185,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     public static int GRID_WIDTH = 512;
     public static int GRID_HEIGHT = 256;
     PairsWMSQueryParam pairsOriginalWMSQueryParams; // Used in Constructor to build originalEnvelope...
-    // PairsWMSQueryParam pairsRequestQueryParams; // Used in method gridCoverage2D read(Params ..)
+    // PairsWMSQueryParam pairsRequestQueryParams; // Used in method gridCoverage2D
+    // read(Params ..)
     double pairsPixelResolution = -1;
 
     /*
@@ -217,7 +201,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         coverageName = input.toString();
         crs = CRS.decode("EPSG:4326");
 
-        pairsOriginalWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+        pairsOriginalWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParamFromQueryParams();
         if (pairsOriginalWMSQueryParams != null) {
             pairsPixelResolution = getPairsPixelResolution();
             originalEnvelope = getPairsOriginalEnvelope();
@@ -469,7 +453,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         }
 
         try {
-            PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParam(null);
+            PairsWMSQueryParam pairsWMSQueryParams = PairsWMSQueryParam
+                    .buildPairsWMSQueryParamFromCoverageRequest(requestedEnvelope, requestGridDimensions);
             logger.info("Request ImageDescriptor: " + pairsWMSQueryParams.toString());
             gridCoverage2D = PairsCoverageFactory.buildGridCoverage2D(pairsOriginalWMSQueryParams, this);
             // PairsQueryCoverageJob pairsQueryCoverageJob = new
