@@ -57,8 +57,10 @@ public class PairsWMSQueryParam implements JsonSerializable {
     }
 
     /**
-     * Used on PairsCoverageReader.read(...) mehod to build params to use in call to
-     * pairsdataservice API to get the raster from hbase
+     * Used in PairsCoverageReader.read(...) mehod to build params to use in call to
+     * pairsdataservice API to get the raster from hbase. Geoserver objects
+     * requestEnvelope and gridDimensions are used to build the pairs request rather
+     * than the input BBOX queryString param
      * 
      * @return
      * @throws Exception
@@ -86,21 +88,10 @@ public class PairsWMSQueryParam implements JsonSerializable {
         return result;
     }
 
-    private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope,
-            Rectangle requestGridDimensions) {
-        double swlonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
-        double nelonlat[] = requestEnvelope.getUpperCorner().getCoordinate();
-        BoundingBox bbox = new BoundingBox(swlonlat, nelonlat);
-        int height = (int) requestGridDimensions.getBounds().getHeight();
-        int width = (int) requestGridDimensions.getBounds().getHeight();
-
-        return new PairsImageDescriptor(bbox, height, width);
-    }
-
     /**
      * Used in PairsCoverageReader constructor to help get originalEnvelope etc
-     * which has to be done from http query params since that is all info avail at
-     * time of call.
+     * which has to be done from http query string params since that is all info avail at
+     * time of construction
      * 
      * @return
      * @throws Exception
@@ -127,6 +118,17 @@ public class PairsWMSQueryParam implements JsonSerializable {
         return result;
     }
 
+    private static PairsImageDescriptor buildRequestImageDescriptor(GeneralEnvelope requestEnvelope,
+            Rectangle requestGridDimensions) {
+        double swlonlat[] = requestEnvelope.getLowerCorner().getCoordinate();
+        double nelonlat[] = requestEnvelope.getUpperCorner().getCoordinate();
+        BoundingBox bbox = new BoundingBox(swlonlat, nelonlat);
+        int height = (int) requestGridDimensions.getBounds().getHeight();
+        int width = (int) requestGridDimensions.getBounds().getHeight();
+
+        return new PairsImageDescriptor(bbox, height, width);
+    }
+
     /**
      * Note, EPSG:4326 is (lat,lon) order in EPSG database. So must be specified
      * that way in the bbox param on WMS getMap request to Gesoerver for WMS 1.3+.
@@ -145,11 +147,11 @@ public class PairsWMSQueryParam implements JsonSerializable {
             throws NoSuchAuthorityCodeException, FactoryException {
         final String bboxQueryParam = paramMap.get("BBOX");
         final CoordinateReferenceSystem crs4326 = CRS.decode("EPSG:4326");
-        
+
         String WMSVersion = paramMap.get("VERSION");
         String[] versionComp = WMSVersion.split("\\.");
         boolean is13plus = Integer.parseInt(versionComp[1]) >= 3;
-        
+
         String crsStr = paramMap.get("CRS");
         CoordinateReferenceSystem crs = CRS.decode(crsStr);
         boolean is4326 = crs == crs4326;

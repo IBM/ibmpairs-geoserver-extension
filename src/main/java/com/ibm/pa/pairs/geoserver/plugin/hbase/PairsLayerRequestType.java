@@ -151,22 +151,23 @@ public class PairsLayerRequestType implements com.ibm.pa.utils.JsonSerializable 
     }
 
     public static void testDeserializeJson(String json) {
-        String layer1nodim_json = "{\"id\":51,\"temporal\":{\"intervals\":[{\"snapshot\":\"1573603200\",\"end\":null}]},\"dimensions\":null,\"pixelLevel\":-1}";
-        String layer1dim1_json = "{\"id\":51,\"temporal\":{\"intervals\":[{\"snapshot\":\"1573603200\",\"start\":null,\"end\":null}]},\"dimensions\":[{\"name\":\"horizon\",\"value\":\"30\",\"identifier\":null,\"order\":null}],\"pixelLevel\":-1}";
-        String layer2dim1_json = "[" + layer1dim1_json + "," + layer1dim1_json + "]";
-        String wrapped_json = "{\"layers\": " + layer2dim1_json + "}";
+        String layer1nodim_json = "{\"id\":51,\"temporal\":{\"intervals\":[{\"snapshot\":\"1573603200\"}]},\"dimensions\":null}";
+        String layer1dim1_json = "{\"id\":51,\"temporal\":{\"intervals\":[{\"snapshot\":\"1573603200\",\"start\":null,\"end\":null}]},\"dimensions\":[{\"name\":\"horizon\",\"value\":\"30\"}]}";
+        String layer2dim1_json = layer1dim1_json + "," + layer1dim1_json;
+        String wrapped_json = "{\"layers\": [" + layer2dim1_json + "]}";
         // String json4 = \"{\\"layers\\":[{\\"id\\": \\"49523\\", \\"temporal\\":
         // \"1262304000\", \"dimension\":[{\"name\":\"horizon\",
         // \"value\":\"30\"},{\"name\": \"elevation\", \"value\": \"10\"}]}]}";
 
+        if (json == null || json.isEmpty())
+            json = wrapped_json;
         try {
-            System.out.println("\tinput json: " + wrapped_json + "\n");
-            PairsLayerRequestType[] result = PairsLayerRequestType.buildFromJson(wrapped_json);
+            System.out.println("\nDeserialize(); input json:\n\t" + json + "\n");
+            PairsLayerRequestType[] result = PairsLayerRequestType.buildFromJson(json);
             System.out.println("Success!!");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
     }
 
     public static String testSerialize() {

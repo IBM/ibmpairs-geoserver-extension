@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch PairsLayerRequestType",
+            "request": "launch",
+            "mainClass": "com.ibm.pa.pairs.geoserver.plugin.hbase.PairsLayerRequestType",
+            "projectName": "pairs-geoserver-extension"
+        },
+        {
+            "type": "java",
             "name": "Launch PairsHttpRequestParamMap",
             "request": "launch",
             "mainClass": "com.ibm.pa.utils.PairsHttpRequestParamMap",

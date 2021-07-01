@@ -42,7 +42,6 @@ import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
 import javax.media.jai.ImageLayout;
 import javax.media.jai.JAI;
 import javax.servlet.http.HttpServletResponse;
@@ -59,7 +58,6 @@ import org.geotools.coverage.grid.io.AbstractGridFormat;
 import org.geotools.coverage.grid.io.OverviewPolicy;
 import org.geotools.geometry.Envelope2D;
 import org.geotools.geometry.GeneralEnvelope;
-import org.geotools.image.io.ImageIOExt;
 import org.geotools.referencing.CRS;
 import org.geotools.util.factory.Hints;
 import org.opengis.coverage.grid.Format;
@@ -101,16 +99,17 @@ import org.opengis.referencing.ReferenceIdentifier;
  * However, one place where we have to be aware of the order is the 'orginal'
  * envelope request which preceeds the call to Coverage2D read(...). Since we
  * are a dynamic coverage I have to give back the original envelop based on the
- * request crs and possibly bounding box (see below about doing WPS). Have also noticed
- * issue with WCS that I'm working to fix.
+ * request crs and possibly bounding box (see below about doing WPS). Have also
+ * noticed issue with WCS that I'm working to fix.
  * 
  * 
- * Note: regarding CoverageReader, originalEnvelope and originalGridRange:
- * As of Geoserver 19+ and maybe 18, (haven't tested) When a user makes the first call to getMap() he
- * gets an instance of PairsCoverageReader which is then reused for the client.
- * So some state from previous call may be saved. Have noticed this issue with WCS and
- * with WMS that I fixed. Mainly, I'm not sure of the consequence of changing the CRS or originalEnvelopes
- * of if Geoserver may change these based on the query results. Have to test.
+ * Note: regarding CoverageReader, originalEnvelope and originalGridRange: As of
+ * Geoserver 19+ and maybe 18, (haven't tested) When a user makes the first call
+ * to getMap() he gets an instance of PairsCoverageReader which is then reused
+ * for the client. So some state from previous call may be saved. Have noticed
+ * this issue with WCS and with WMS that I fixed. Mainly, I'm not sure of the
+ * consequence of changing the CRS or originalEnvelopes of if Geoserver may
+ * change these based on the query results. Have to test.
  * 
  * 
  * These refer to the BBOX (lon, lat) and grid (x,y pixels) of the data source.
@@ -119,23 +118,23 @@ import org.opengis.referencing.ReferenceIdentifier;
  * read() method here tells Geoserver the exact BBOX and pixel range of the
  * returned raster.
  * 
- * For requests like WPS we find that Geoserver queries the original GeneralEnvelope and
- * GridRange prior to issuing the call to read(). The dimensions in these
- * objects are used by Geoserver to scale and (affine)transform the Params it
- * passes to read(). Therefore, the original envelope and GridRange contents
- * must be very accurate. The values must correspond to a BBOX and pixel size of
- * the returned Pairs image in the 4326 CRS. It seems the main parameter
- * Geoserver requires is the pixel size in degrees/pixel. Geoserver determines
- * the scale by fitting an affine transform to the corners of the boxes returned
- * in the envelope and gridRange. If the data source was a geotiff file, this
- * information is available from the geotiff metadata which is directly read. In
- * the GeoTiffReader extension the Envelope and grid range are populated by the
- * actual dimensions of the geotiff source file. (This metadata can be displayed
- * by, opening the goetiff in QGis. It would show that a sentinel 2 high res
- * image geotiff created by query to the pairs client has metadata indicating
- * its scale in X,Y are both 64uDeg/pixe. These would be exactly ratio of the
- * size of the file in lon, lat divided by the number of pixels in X or Y
- * respectively)
+ * For requests like WPS we find that Geoserver queries the original
+ * GeneralEnvelope and GridRange prior to issuing the call to read(). The
+ * dimensions in these objects are used by Geoserver to scale and
+ * (affine)transform the Params it passes to read(). Therefore, the original
+ * envelope and GridRange contents must be very accurate. The values must
+ * correspond to a BBOX and pixel size of the returned Pairs image in the 4326
+ * CRS. It seems the main parameter Geoserver requires is the pixel size in
+ * degrees/pixel. Geoserver determines the scale by fitting an affine transform
+ * to the corners of the boxes returned in the envelope and gridRange. If the
+ * data source was a geotiff file, this information is available from the
+ * geotiff metadata which is directly read. In the GeoTiffReader extension the
+ * Envelope and grid range are populated by the actual dimensions of the geotiff
+ * source file. (This metadata can be displayed by, opening the goetiff in QGis.
+ * It would show that a sentinel 2 high res image geotiff created by query to
+ * the pairs client has metadata indicating its scale in X,Y are both
+ * 64uDeg/pixe. These would be exactly ratio of the size of the file in lon, lat
+ * divided by the number of pixels in X or Y respectively)
  * 
  * For the Pairs extension, a query must be made to pairs hbase data service to
  * get the pairs pixel scale that the image will be returned in. For Sentinel 2,
@@ -276,15 +275,20 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
     }
 
     /**
+     * This method is called from Geoserver just after initial construction which
+     * can occur during creating new data store. So we return 1 as default.
+     * 
      * I think for multi-layer request this will become the number of bands parsed
-     * from the input parameters. Not sure, will have to test
+     * from the input parameters. Not sure, will have to test.
      *
      * @return the number of coverages for this reader.
      */
     @Override
     public int getGridCoverageCount() {
-        Integer num = pairsOriginalWMSQueryParams.getLayers().length;
-        return num;
+        int result = 1;
+        if (pairsOriginalWMSQueryParams != null)
+            result = pairsOriginalWMSQueryParams.getLayers().length;
+        return result;
     }
 
     private Double getPairsPixelResolution() throws URISyntaxException, ClientProtocolException, IOException {
@@ -373,7 +377,8 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
 
         // originalEnvelope = getMyOriginalEnvelope();
         // originalGridRange = getMyOriginalGridRange();
-        // setlayout(new ImageLayout(0, 0, getMyOriginalGridRange().getSpan(0), getMyOriginalGridRange().getSpan(1)));
+        // setlayout(new ImageLayout(0, 0, getMyOriginalGridRange().getSpan(0),
+        // getMyOriginalGridRange().getSpan(1)));
 
         /**
          * NOTE: NB May need to update the pairsWMSQueryParams created during
