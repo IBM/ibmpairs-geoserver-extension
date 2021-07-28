@@ -9,12 +9,14 @@
         <jackson2.version>2.11.1</jackson2.version>
         <pairs.extension.branch>2.19.x</pairs.extension.branch>
         <pairs.extension.minor>0</pairs.extension.minor>
-        <pairs.extension.tag>${geoserver.version}-${pairs.extension.minor}</pairs.extension.tag>
+        <pairs.extension.tag>${geoserver.version}.${pairs.extension.minor}</pairs.extension.tag>
+        <pairs.extension.finalName>${project.artifactId}-${pairs.extension.tag}</pairs.extension.finalName>
     </properties>
 
     <groupId>com.ibm.pairs</groupId>
     <artifactId>pairs-geoserver-extension</artifactId>
-    <version>0.41.0</version>
+    <!-- <version>0.41.0</version> -->
+    <version>${pairs.extension.tag}</version>
     <packaging>jar</packaging>
 
     <name>pairs-geoserver-extension</name>
@@ -28,7 +30,7 @@
     </organization>
 
     <build>
-        <finalName>${project.artifactId}-${pairs.extension.tag}</finalName>
+        <finalName>${pairs.extension.finalName}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -44,7 +46,7 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.1.2</version>
                 <configuration>
-                    <finalName>${project.artifactId}-${pairs.extension.tag}</finalName>
+                    <!-- <finalName>${project.artifactId}-${pairs.extension.tag}</finalName> -->
                 </configuration>
             </plugin>
             <plugin>

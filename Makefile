@@ -10,7 +10,7 @@
 # deposited with the U.S. Copyright Office.
 #===============================================================
 
-.PHONY: package build compile clean test help
+.PHONY: package build compile clean test help push
 
 .DEFAULT_GOAL= help
 SHELL:=bash
@@ -22,18 +22,18 @@ DESC:="pairs-geoserver-extension Jar build"
 
 PROJECT_GROUP_ID=$(shell cat pom.xml | grep "^.*<groupId>.*</groupId>$$"| head -1 | awk -F'[><]' '{print $$3}')
 PROJECT_ARTIFACT_ID=$(shell cat pom.xml | grep "^.*<artifactId>.*</artifactId>$$"| head -1 | awk -F'[><]' '{print $$3}')
-PROJECT_VERSION=$(shell cat pom.xml | grep "^.*<version>.*</version>$$"| head -1 | awk -F'[><]' '{print $$3}')
+# PROJECT_VERSION=$(shell cat pom.xml | grep "^.*<version>.*</version>$$"| head -1 | awk -F'[><]' '{print $$3}')
 M2_DIR?=$(HOME)/.m2
 
 DOCKER_DEV_IMAGE=maven:3.6.3-jdk-8-slim
 DOCKER_VOLS=-v `pwd`:/usr/src/$(PROJECT) -v $(M2_DIR):/root/.m2 -w /usr/src/$(PROJECT)
 
-DUMMYINCLUDE:=$(shell if [ ! -z "cicd/Makefile.release.mk" ]; then mkdir -p cicd && touch cicd/Makefile.release.mk; fi)
-DUMMYINCLUDE:=$(shell if [ ! -z ".env" ]; then touch .env; fi)
+# DUMMYINCLUDE:=$(shell if [ ! -z "cicd/Makefile.release.mk" ]; then mkdir -p cicd && touch cicd/Makefile.release.mk; fi)
+# DUMMYINCLUDE:=$(shell if [ ! -z ".env" ]; then touch .env; fi)
 
 # enable for auto release version
-include .env
-include cicd/Makefile.release.mk
+# include .env
+# include cicd/Makefile.release.mk
 
 help: # http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 	@echo $(PROJECT):$(PROJECT_VERSION)
@@ -76,11 +76,9 @@ test:
 	@mvn test
 
 push: ## Pushes binaries to artifactory 
-push: 
+push:
 	@echo "push to artifactory:"
-	# @cicd/artifactoryUpload.sh -i "pairs-geoserver-extension-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "com.ibm.pairs" -a "pairs-geoserver-extension" -f "zip" -b "target"
-	@cicd/artifactoryUpload.sh -i "$(PROJECT_ARTIFACT_ID)-$(PROJECT_VERSION)-plugin.zip" -u ${ARTIFACTORY_USER} -k ${ARTIFACTORY_KEY} -r "wcp-pairsgeos-release-generic-local" -g "$(PROJECT_GROUP_ID)" -a "$(PROJECT_ARTIFACT_ID)" -v $(PROJECT_VERSION) -f "zip" -b "target" 
-	@curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_KEY}" -T pom.xml "https://na.artifactory.swg-devops.com/artifactory/wcp-pairsgeos-release-generic-local/$(PROJECT_GROUP_ID)/$(PROJECT_ARTIFACT_ID)/$(PROJECT_VERSION)/pom.xml"
+	mvn deploy
 
 checkout-deps: ## Checkout scripts required for cicd flow.
 checkout-deps: env-GH_TOKEN
