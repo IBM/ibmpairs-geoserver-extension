@@ -29,11 +29,11 @@ script:
 deploy:
 
   #Execute block only on master (and only for manual push)
-- provider: script
-  script: make release-if-not-auto-push
-  skip_cleanup: true
-  on:
-    branch: master
+# - provider: script
+#   script: make release-if-not-auto-push
+#  skip_cleanup: true
+#  on:
+#    branch: master
 
   #Execute block only when a tag is created
 - provider: script
