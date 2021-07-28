@@ -76,7 +76,7 @@ test:
 	@mvn test
 
 push: ## Pushes binaries to artifactory 
-push:
+push: .m2
 	@echo "push to artifactory:"
 	mvn deploy
 
