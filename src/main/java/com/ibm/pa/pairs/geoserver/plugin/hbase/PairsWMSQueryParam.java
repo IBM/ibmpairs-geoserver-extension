@@ -96,7 +96,7 @@ public class PairsWMSQueryParam implements JsonSerializable {
      * @return
      * @throws Exception
      */
-    public static PairsWMSQueryParam buildPairsWMSQueryParamFromQueryParams() throws Exception {
+    public static PairsWMSQueryParam buildPairsWMSQueryParamFromHttpQueryParams() throws Exception {
         Map<String, Object> kvp = null;
         PairsHttpRequestParamMap paramMap = null;
 

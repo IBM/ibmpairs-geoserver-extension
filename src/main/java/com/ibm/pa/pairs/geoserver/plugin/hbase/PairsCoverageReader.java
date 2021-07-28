@@ -206,7 +206,7 @@ public class PairsCoverageReader extends AbstractGridCoverage2DReader {
         coverageName = input.toString();
         crs = CRS.decode("EPSG:4326");
 
-        pairsOriginalWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParamFromQueryParams();
+        pairsOriginalWMSQueryParams = PairsWMSQueryParam.buildPairsWMSQueryParamFromHttpQueryParams();
         if (pairsOriginalWMSQueryParams != null) {
             pairsPixelResolution = getPairsPixelResolution();
             originalEnvelope = getPairsOriginalEnvelope();
